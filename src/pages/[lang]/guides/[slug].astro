@@ -1,0 +1,16 @@
+---
+import GuideView from '../../../views/GuideView.astro';
+import { defaultLocale } from '../../../i18n/config';
+import { siteLocales } from '../../../i18n/ui';
+import { listTranslated } from '../../../i18n/content';
+
+export async function getStaticPaths() {
+  const paths = [];
+  for (const lang of siteLocales.filter((l) => l !== defaultLocale)) {
+    for (const item of await listTranslated('guides', lang)) paths.push({ params: { lang, slug: item.slug }, props: { lang, item } });
+  }
+  return paths;
+}
+const { lang, item } = Astro.props;
+---
+<GuideView {lang} {item} />

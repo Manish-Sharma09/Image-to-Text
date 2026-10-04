@@ -1,0 +1,289 @@
+---
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { SITE } from '../config/site';
+import { fmt, languages, localizePath, type Locale } from '../i18n/config';
+import { useTranslations, siteLocales } from '../i18n/ui';
+import { listLocalized, localesOf, type Localized } from '../i18n/content';
+
+interface Props {
+  lang: Locale;
+  item: Localized<'guides'>;
+}
+const { lang, item } = Astro.props;
+const t = useTranslations(lang);
+const p = t.guidesPage;
+const { Content, headings } = await render(item.entry);
+const d = item.entry.data;
+const tools = await listLocalized('tools', lang);
+const tool = d.tool ? tools.find((x) => x.slug === d.tool) : undefined;
+const all = await listLocalized('guides', lang);
+const more = all.filter((g) => g.slug !== item.slug).slice(0, 4);
+const site = Astro.site ?? new URL(SITE.url);
+const url = new URL(localizePath(`/guides/${item.slug}`, lang), site).href;
+const toc = headings.filter((h) => h.depth === 2);
+const date = new Intl.DateTimeFormat(languages[lang].hreflang, { dateStyle: 'long' });
+const alternates = (await localesOf('guides', item.slug)).filter((l) => siteLocales.includes(l));
+const firstSentence = (s: string) => s.match(/^.*?(?:[.!?](?=\s)|[。！？])/)?.[0] ?? s;
+
+const schema = [
+  {
+    '@type': 'Article',
+    headline: d.title,
+    description: d.description,
+    datePublished: d.published.toISOString(),
+    dateModified: (d.updated ?? d.published).toISOString(),
+    mainEntityOfPage: url,
+    image: new URL('/og.png', site).href,
+    inLanguage: languages[lang].hreflang,
+    author: { '@type': 'Organization', name: SITE.name, url: new URL('/', site).href },
+    publisher: { '@id': `${site.origin}/#org` },
+  },
+  {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: p.crumb, item: new URL(localizePath('/guides', lang), site).href },
+      { '@type': 'ListItem', position: 2, name: d.title, item: url },
+    ],
+  },
+];
+---
+<Base title={d.title} description={d.description} schema={schema} ogType="article" published={d.published} modified={d.updated} ogImageAlt={`${d.title} — ${SITE.name}`} {lang} {alternates}>
+  <div class="container layout">
+    <article>
+      <header class="head">
+        <nav class="crumbs" aria-label={t.nav.breadcrumb}><a href={localizePath('/guides', lang)}>{p.crumb}</a></nav>
+        <h1 class="h-display">{d.title}</h1>
+        <p class="lede">{d.summary}</p>
+        <p class="date eyebrow">{p.updated} <time datetime={(d.updated ?? d.published).toISOString()}>{date.format(d.updated ?? d.published)}</time></p>
+      </header>
+      <div class="prose">
+        <Content />
+      </div>
+    </article>
+    <aside>
+      {toc.length > 2 && (
+        <nav class="toc" aria-label={p.onThisPage}>
+          <h2 class="eyebrow">{p.onThisPage}</h2>
+          <ol>{toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol>
+        </nav>
+      )}
+      {tool && (
+        <div class="cta">
+          <p class="k">{p.tryIt}</p>
+          <p class="t">{tool.entry.data.navLabel}</p>
+          <p class="s">{firstSentence(tool.entry.data.intro)}</p>
+          <a class="btn btn-primary btn-pill" href={localizePath(`/${tool.slug}`, tool.lang)}>{fmt(p.open, { name: tool.entry.data.navLabel })}</a>
+        </div>
+      )}
+    </aside>
+  </div>
+  <div class="container more">
+    <h2>{p.more}</h2>
+    <div class="frame">
+      <ul>
+        {more.map((g) => (
+          <li>
+            <a href={localizePath(`/guides/${g.slug}`, g.lang)}>
+              {g.entry.data.title}
+              <svg class="arr" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 80px;
+    padding-top: 64px;
+  }
+  article {
+    min-width: 0;
+  }
+  .head {
+    display: grid;
+    gap: 16px;
+    justify-items: start;
+    padding-bottom: 32px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .prose {
+    padding-top: 24px;
+  }
+  .prose > :global(:first-child) {
+    margin-top: 0;
+  }
+  .crumbs a {
+    font-size: var(--t-sm);
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--ink);
+  }
+  h1 {
+    max-width: 20ch;
+  }
+  .head .lede {
+    font-size: var(--t-xl);
+    line-height: 1.55;
+    max-width: 58ch;
+  }
+  .date {
+    margin-top: 4px;
+  }
+  aside {
+    display: grid;
+    align-content: start;
+    gap: 32px;
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    align-self: start;
+    padding-top: 8px;
+  }
+  .toc h2 {
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--rule);
+    display: grid;
+    gap: 2px;
+    font-size: var(--t-sm);
+  }
+  .toc a {
+    display: block;
+    padding: 4px 0 4px 14px;
+    margin-left: -1px;
+    border-left: 1px solid transparent;
+    color: var(--ink-3);
+    text-decoration: none;
+    line-height: 1.45;
+    transition: color 150ms var(--ease), border-color 150ms var(--ease);
+  }
+  .toc a:hover {
+    color: var(--ink);
+    border-left-color: var(--ink);
+  }
+  .cta {
+    padding: 20px;
+    border-radius: var(--r-lg);
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow-1);
+    display: grid;
+    gap: 6px;
+    justify-items: start;
+  }
+  .cta .k {
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .cta .t {
+    font-weight: 600;
+    font-size: var(--t-lg);
+    letter-spacing: var(--track-sub);
+  }
+  .cta .s {
+    font-size: var(--t-sm);
+    color: var(--ink-2);
+    margin-bottom: 10px;
+  }
+  .more {
+    margin-top: 96px;
+  }
+  .more h2 {
+    font-size: clamp(var(--t-2xl), 2.6vw, var(--t-3xl));
+    letter-spacing: var(--track-heading);
+    margin-bottom: 24px;
+  }
+  /* Shared-hairline grid: the list overhangs the frame by 1px on the right
+     and bottom so the outer cells' borders are clipped by the frame. */
+  .frame {
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    background: var(--sheet);
+    overflow: hidden;
+  }
+  .more ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 -1px -1px 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .more li {
+    display: flex;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .more a {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+    transition: background-color 150ms var(--ease);
+  }
+  .more a:hover {
+    background: var(--paper);
+  }
+  .more a:focus-visible {
+    outline-offset: -2px;
+  }
+  .arr {
+    flex: none;
+    color: var(--ink-4);
+    transition: transform 200ms var(--ease-out), color 150ms var(--ease);
+  }
+  .more a:hover .arr {
+    color: var(--ink);
+    transform: translateX(2px);
+  }
+  @media (max-width: 960px) {
+    .layout {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    aside {
+      position: static;
+      padding-top: 0;
+    }
+    .toc {
+      display: none;
+    }
+  }
+  @media (max-width: 640px) {
+    .layout {
+      padding-top: 40px;
+    }
+    .head .lede {
+      font-size: var(--t-lg);
+    }
+    .more {
+      margin-top: 64px;
+    }
+    .more ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .more a {
+      padding: 18px 20px;
+    }
+  }
+</style>

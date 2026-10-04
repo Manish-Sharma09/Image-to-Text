@@ -22,3 +22,10 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# OCR engine files copied from node_modules (scripts/vendor-ocr.mjs)
+public/vendor/
+# Tesseract language caches written by the Node test harness
+*.traineddata
+# Bundled unit tests (scripts/test.mjs)
+.cache/

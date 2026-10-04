@@ -1,0 +1,115 @@
+---
+import { defaultLocale, localizePath, type Locale } from '../../i18n/config';
+import { listLocalized } from '../../i18n/content';
+
+interface Props {
+  slugs?: string[];
+  heading: string;
+  exclude?: string;
+  lang?: Locale;
+}
+const { slugs, heading, exclude, lang = defaultLocale } = Astro.props;
+const all = await listLocalized('tools', lang);
+const list = slugs?.length ? slugs.map((s) => all.find((t) => t.slug === s)).filter((t) => !!t) : all.filter((t) => t.slug !== exclude);
+// First sentence of the intro; CJK sentences end in 。 rather than ". ".
+const firstSentence = (s: string) => {
+  const m = s.match(/^.*?(?:[.!?](?=\s)|[。！？])/);
+  return m ? m[0] : s;
+};
+---
+<section class="related" aria-labelledby="rel-h">
+  <h2 id="rel-h">{heading}</h2>
+  <div class="frame">
+    <ul>
+      {list.map((t) => (
+        <li>
+          <a href={localizePath(`/${t!.slug}`, t!.lang)}>
+            <strong>
+              {t!.entry.data.navLabel}
+              <svg class="arr" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </strong>
+            <span>{firstSentence(t!.entry.data.intro)}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  h2 {
+    font-size: clamp(var(--t-2xl), 2.6vw, var(--t-3xl));
+    letter-spacing: var(--track-heading);
+    margin-bottom: 24px;
+  }
+  /* Shared-hairline grid: the list overhangs the frame by 1px on the right
+     and bottom so the outer cells' borders are clipped by the frame. */
+  .frame {
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    background: var(--sheet);
+    overflow: hidden;
+  }
+  ul {
+    list-style: none;
+    margin: 0 -1px -1px 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  li {
+    display: flex;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  a {
+    flex: 1;
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 24px;
+    text-decoration: none;
+    transition: background-color 150ms var(--ease);
+  }
+  a:hover {
+    background: var(--paper);
+  }
+  a:focus-visible {
+    outline-offset: -2px;
+  }
+  strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--t-md);
+    font-weight: 600;
+    letter-spacing: var(--track-sub);
+    color: var(--ink);
+  }
+  .arr {
+    color: var(--ink-4);
+    transition: transform 200ms var(--ease-out), color 150ms var(--ease);
+  }
+  a:hover .arr {
+    color: var(--ink);
+    transform: translateX(2px);
+  }
+  span {
+    color: var(--ink-3);
+    font-size: var(--t-sm);
+    line-height: 1.55;
+  }
+  @media (max-width: 900px) {
+    ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    a {
+      padding: 20px;
+    }
+  }
+</style>

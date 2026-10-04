@@ -1,0 +1,144 @@
+---
+import Workspace from '../workspace/Workspace.svelte';
+import HeroMesh from './HeroMesh.astro';
+import { defaultLocale, localizePath, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n/ui';
+import { getAppText } from '../../i18n/app';
+
+interface Props {
+  h1: string;
+  intro: string;
+  mode?: string;
+  exportFormat?: string;
+  sample?: string;
+  camera?: boolean;
+  /** Tool pages: the current page's name, shown as a breadcrumb above the H1. */
+  crumb?: string;
+  lang?: Locale;
+}
+const { h1, intro, mode = 'auto', exportFormat, sample, camera = false, crumb, lang = defaultLocale } = Astro.props;
+const t = useTranslations(lang);
+---
+<section class="hero" id="tool" aria-labelledby="tool-h1" data-hero>
+  <div class="top">
+    <HeroMesh />
+    <div class="container head">
+      {crumb && (
+        <nav class="crumbs eyebrow" aria-label={t.nav.breadcrumb} data-intro="crumb">
+          <a href={localizePath('/', lang)}>{t.hero.crumbHome}</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{crumb}</span>
+        </nav>
+      )}
+      <h1 id="tool-h1" data-intro="h1" data-split>{h1}</h1>
+      <p class="intro" data-intro="lede">{intro}</p>
+    </div>
+  </div>
+  <div class="container-wide stage">
+    <div class="bezel" data-intro="frame">
+      <Workspace client:load mode={mode as never} {exportFormat} {sample} {camera} {lang} text={getAppText(lang)} />
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initHero } from '../../lib/motion/hero';
+  const root = document.querySelector<HTMLElement>('[data-hero]');
+  if (root) initHero(root);
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    padding-bottom: 24px;
+  }
+  .top {
+    position: relative;
+  }
+  .head {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+    padding-top: clamp(32px, 6vw, 72px);
+    padding-bottom: clamp(28px, 4vw, 44px);
+    text-align: center;
+  }
+  .crumbs {
+    gap: 8px;
+  }
+  .crumbs a {
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--ink);
+  }
+  .crumbs [aria-current] {
+    color: var(--ink);
+  }
+  h1 {
+    max-width: 24ch;
+    font-size: clamp(2.375rem, 5.4vw, 3.5rem);
+    line-height: 1.02;
+    letter-spacing: var(--track-display);
+  }
+  /* SplitText line masks: keep descenders inside the clip. */
+  h1 :global(.split-line) {
+    padding-bottom: 0.08em;
+    margin-bottom: -0.08em;
+  }
+  .intro {
+    max-width: 60ch;
+    font-size: var(--t-lg);
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .stage {
+    position: relative;
+    z-index: 1;
+  }
+  /* Frosted bezel around the workspace. The blur lives on a pseudo-element so
+     the bezel doesn't become the containing block for the workspace's
+     position: fixed children (drop overlay, toasts). */
+  .bezel {
+    position: relative;
+    isolation: isolate;
+    padding: 6px;
+    border-radius: var(--r-xl);
+  }
+  .bezel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-edge);
+    box-shadow:
+      var(--shadow-hero),
+      inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+  }
+  .bezel :global(.ws) {
+    border-radius: var(--r-lg);
+  }
+  @media (max-width: 640px) {
+    .head {
+      justify-items: start;
+      text-align: left;
+    }
+    .intro {
+      font-size: var(--t-md);
+    }
+    .bezel {
+      padding: 4px;
+      border-radius: 18px;
+    }
+    .bezel :global(.ws) {
+      border-radius: 14px;
+    }
+  }
+</style>

@@ -1,0 +1,424 @@
+---
+import { SITE } from '../../config/site';
+import { THEMES } from '../../lib/theme';
+import { defaultLocale, languages, locales, localizePath, fmt, type Locale } from '../../i18n/config';
+import { useTranslations, hasDictionary } from '../../i18n/ui';
+import Logo from './Logo.astro';
+
+interface Props {
+  /** True on pages that host the workspace, so History opens in place. */
+  hasWorkspace?: boolean;
+  lang?: Locale;
+  /** This page's route without a locale prefix, e.g. '/jpg-to-text'. */
+  path?: string;
+  /** Locales this page exists in; other languages link to their home page. */
+  alternates?: Locale[];
+}
+const { hasWorkspace = false, lang = defaultLocale, path = '/', alternates = [lang] } = Astro.props;
+const t = useTranslations(lang);
+const current = Astro.url.pathname.replace(/\/$/, '') || '/';
+const nav = [
+  { href: localizePath('/tools', lang), label: t.nav.tools },
+  { href: localizePath('/guides', lang), label: t.nav.guides },
+  { href: localizePath('/privacy', lang), label: t.nav.privacy },
+];
+const themeLabels = { system: t.theme.system, light: t.theme.light, dark: t.theme.dark };
+const langs = locales
+  .filter((l) => hasDictionary(l))
+  .map((l) => ({ code: l, label: languages[l].label, href: localizePath(alternates.includes(l) ? path : '/', l) }));
+---
+<header class="site-header" data-header>
+  <div class="container-wide bar">
+    <a href={localizePath('/', lang)} class="brand" aria-label={fmt(t.nav.homeLabel, { site: SITE.name })}>
+      <Logo size={26} />
+      <span translate="no">{SITE.name}</span>
+    </a>
+    <nav class="nav" aria-label={t.nav.main}>
+      <ul>
+        {nav.map((item) => (
+          <li>
+            <a href={item.href} aria-current={current === item.href || current.startsWith(item.href + '/') ? 'page' : undefined}>{item.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <div class="end">
+      {langs.length > 1 && (
+        <div class="menu-wrap" data-menu="lang">
+          <button type="button" class="btn btn-ghost menu-btn lang-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="lang-menu" aria-label={fmt(t.language.current, { name: languages[lang].label })}>
+            <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm-9-9h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span class="code" aria-hidden="true">{lang.toUpperCase()}</span>
+          </button>
+          <div class="menu" id="lang-menu" role="menu" aria-label={t.language.menu} hidden>
+            {langs.map((l) => (
+              <a role="menuitemradio" aria-checked={l.code === lang ? 'true' : 'false'} href={l.href} hreflang={languages[l.code].hreflang} lang={languages[l.code].hreflang} tabindex="-1">
+                <span>{l.label}</span>
+                <svg class="tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+      <div class="menu-wrap" data-menu="theme" data-labels={JSON.stringify(themeLabels)} data-label-template={t.theme.current}>
+        <button type="button" class="btn btn-ghost btn-icon menu-btn theme-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu" aria-label={t.theme.menu}>
+          {THEMES.map((th) => (
+            <svg class={`ico ico-${th.value}`} width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d={th.icon} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          ))}
+        </button>
+        <div class="menu" id="theme-menu" role="menu" aria-label={t.theme.menu} hidden>
+          {THEMES.map((th) => (
+            <button type="button" role="menuitemradio" aria-checked={th.value === 'system' ? 'true' : 'false'} data-value={th.value} tabindex="-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d={th.icon} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              <span>{themeLabels[th.value]}</span>
+              <svg class="tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          ))}
+        </div>
+      </div>
+      {hasWorkspace ? (
+        <button type="button" class="btn" data-open-history aria-label={t.nav.history}>
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4M12 8v4l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>{t.nav.history}</span>
+        </button>
+      ) : (
+        <a class="btn btn-primary" href={localizePath('/', lang)}>{t.nav.openTool}</a>
+      )}
+    </div>
+  </div>
+</header>
+
+<script>
+  import { getTheme, setTheme, onThemeChange, type ThemeChoice } from '../../lib/theme';
+
+  // Hairline and stronger glass once the page scrolls under the header.
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  if (header) {
+    let ticking = false;
+    const update = () => {
+      header.toggleAttribute('data-scrolled', window.scrollY > 4);
+      ticking = false;
+    };
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) requestAnimationFrame(update);
+        ticking = true;
+      },
+      { passive: true },
+    );
+    update();
+  }
+
+  /** A menu button with radio items: arrow keys, Home/End, Escape, click outside. */
+  function initMenu(wrap: HTMLElement, onPick: (item: HTMLElement) => void) {
+    const button = wrap.querySelector<HTMLButtonElement>('.menu-btn')!;
+    const menu = wrap.querySelector<HTMLElement>('[role="menu"]')!;
+    const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
+    const outside = (e: Event) => {
+      if (!wrap.contains(e.target as Node)) close();
+    };
+    const open = () => {
+      document.querySelectorAll<HTMLElement>('[data-menu] [role="menu"]:not([hidden])').forEach((m) => m !== menu && m.dispatchEvent(new Event('menu:close')));
+      menu.hidden = false;
+      button.setAttribute('aria-expanded', 'true');
+      (items.find((i) => i.getAttribute('aria-checked') === 'true') ?? items[0]).focus();
+      document.addEventListener('pointerdown', outside, true);
+    };
+    const close = (refocus = false) => {
+      if (menu.hidden) return;
+      menu.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('pointerdown', outside, true);
+      if (refocus) button.focus();
+    };
+    menu.addEventListener('menu:close', () => close());
+    button.addEventListener('click', () => (menu.hidden ? open() : close(true)));
+    button.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        open();
+      }
+    });
+    items.forEach((item, i) => {
+      item.addEventListener('click', () => {
+        onPick(item);
+        close(true);
+      });
+      item.addEventListener('keydown', (e) => {
+        const move = (to: number) => {
+          e.preventDefault();
+          items[(to + items.length) % items.length].focus();
+        };
+        if (e.key === 'ArrowDown') move(i + 1);
+        else if (e.key === 'ArrowUp') move(i - 1);
+        else if (e.key === 'Home') move(0);
+        else if (e.key === 'End') move(items.length - 1);
+        else if (e.key === 'Escape') {
+          e.preventDefault();
+          close(true);
+        } else if (e.key === 'Tab') close();
+      });
+    });
+    return items;
+  }
+
+  const themeWrap = document.querySelector<HTMLElement>('[data-menu="theme"]');
+  if (themeWrap) {
+    const labels = JSON.parse(themeWrap.dataset.labels ?? '{}') as Record<ThemeChoice, string>;
+    const template = themeWrap.dataset.labelTemplate ?? 'Theme: {name}';
+    const button = themeWrap.querySelector<HTMLButtonElement>('.menu-btn')!;
+    const items = initMenu(themeWrap, (item) => setTheme(item.dataset.value as ThemeChoice));
+    const sync = (choice: ThemeChoice) => {
+      items.forEach((item) => item.setAttribute('aria-checked', String(item.dataset.value === choice)));
+      button.setAttribute('aria-label', template.replace('{name}', labels[choice] ?? choice));
+    };
+    sync(getTheme());
+    onThemeChange(sync);
+  }
+
+  // Language links navigate on their own; the menu only handles opening and keys.
+  const langWrap = document.querySelector<HTMLElement>('[data-menu="lang"]');
+  if (langWrap) initMenu(langWrap, () => {});
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--header-h);
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid transparent;
+    transition: border-color 200ms var(--ease);
+  }
+  /* The blur lives on a pseudo-element: an element with backdrop-filter would
+     stop the menus' own blur from reaching the page below the header. */
+  .site-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: color-mix(in srgb, var(--paper) 55%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+    transition: background-color 200ms var(--ease);
+  }
+  .site-header[data-scrolled] {
+    border-bottom-color: var(--rule);
+  }
+  .site-header[data-scrolled]::before {
+    background: color-mix(in srgb, var(--paper) 78%, transparent);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header::before,
+    .site-header[data-scrolled]::before {
+      background: var(--paper);
+    }
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+    font-weight: 600;
+    font-size: var(--t-lg);
+    letter-spacing: var(--track-sub);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .nav {
+    min-width: 0;
+  }
+  .nav ul {
+    display: flex;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: var(--r-pill);
+    text-decoration: none;
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    white-space: nowrap;
+    transition:
+      color 150ms var(--ease),
+      background-color 150ms var(--ease);
+  }
+  .nav a:hover {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+  }
+  .nav a[aria-current='page'] {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .end {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .end .btn {
+    min-height: 36px;
+  }
+
+  /* Menus (language, theme) */
+  .menu-wrap {
+    position: relative;
+  }
+  .menu-btn {
+    color: var(--ink-2);
+  }
+  .menu-btn:hover,
+  .menu-btn[aria-expanded='true'] {
+    color: var(--ink);
+    --btn-bg: color-mix(in srgb, var(--ink) 6%, transparent);
+  }
+  .theme-btn {
+    width: 36px;
+  }
+  .lang-btn {
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .code {
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+  }
+  /* The theme icon follows <html data-theme>, so it's right before any script runs. */
+  .ico {
+    display: none;
+  }
+  :global(:root:not([data-theme])) .ico-system,
+  :global(:root[data-theme='light']) .ico-light,
+  :global(:root[data-theme='dark']) .ico-dark {
+    display: block;
+  }
+  .menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 60;
+    min-width: 168px;
+    padding: 4px;
+    display: grid;
+    gap: 1px;
+    background: var(--glass-strong);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-pop);
+    transform-origin: top right;
+    animation: menu-in 160ms var(--ease-out);
+  }
+  .menu[hidden] {
+    display: none;
+  }
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+  }
+  [role='menuitemradio'] {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--r-xs);
+    background: none;
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    text-align: left;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  [role='menuitemradio'] span {
+    flex: 1;
+  }
+  [role='menuitemradio']:hover,
+  [role='menuitemradio']:focus-visible {
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+    color: var(--ink);
+    outline: none;
+  }
+  [role='menuitemradio']:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+  [role='menuitemradio'][aria-checked='true'] {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .tick {
+    visibility: hidden;
+    color: var(--accent);
+  }
+  [aria-checked='true'] .tick {
+    visibility: visible;
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .menu {
+      background: var(--sheet);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .bar {
+      gap: 6px;
+    }
+    .nav a {
+      padding: 0 8px;
+    }
+    .end {
+      gap: 2px;
+    }
+    .end .btn span:not(.code) {
+      display: none;
+    }
+    .end .btn[data-open-history] {
+      width: 36px;
+      padding: 0;
+    }
+    .end .btn-primary {
+      display: none;
+    }
+    .lang-btn {
+      padding: 0 8px;
+    }
+  }
+  @media (max-width: 520px) {
+    .brand span {
+      display: none;
+    }
+    .lang-btn .code {
+      display: none;
+    }
+    .lang-btn {
+      width: 36px;
+      padding: 0;
+    }
+  }
+  @media (max-width: 380px) {
+    .nav a {
+      padding: 0 6px;
+      font-size: var(--t-xs);
+    }
+  }
+</style>

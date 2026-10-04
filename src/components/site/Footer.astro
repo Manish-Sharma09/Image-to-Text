@@ -1,0 +1,222 @@
+---
+import { SITE } from '../../config/site';
+import Logo from './Logo.astro';
+import { THEMES } from '../../lib/theme';
+import { defaultLocale, fmt, languages, locales, localizePath, type Locale } from '../../i18n/config';
+import { useTranslations, hasDictionary } from '../../i18n/ui';
+import { listLocalized } from '../../i18n/content';
+import { hasLegal } from '../../i18n/legal';
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = defaultLocale } = Astro.props;
+const t = useTranslations(lang);
+const tools = await listLocalized('tools', lang);
+const guides = await listLocalized('guides', lang);
+const year = new Date().getFullYear();
+const href = (path: string, contentLang: Locale = lang) => localizePath(path, contentLang);
+const themeTitles = { system: t.theme.systemTheme, light: t.theme.lightTheme, dark: t.theme.darkTheme };
+const siteLangs = locales.filter((l) => hasDictionary(l));
+---
+<footer class="site-footer">
+  <div class="container-wide grid">
+    <div class="about">
+      <a href={href('/')} class="brand"><Logo size={24} /> <span translate="no">{SITE.name}</span></a>
+      <p>{t.footer.about}</p>
+    </div>
+    <nav aria-label={t.footer.tools} class="tools">
+      <h2>{t.footer.tools}</h2>
+      <ul>
+        <li><a href={href('/')}>{t.footer.imageToText}</a></li>
+        {tools.map((x) => <li><a href={href(`/${x.slug}`, x.lang)}>{x.entry.data.navLabel}</a></li>)}
+      </ul>
+    </nav>
+    <nav aria-label={t.footer.guides}>
+      <h2>{t.footer.guides}</h2>
+      <ul>
+        {guides.slice(0, 8).map((g) => <li><a href={href(`/guides/${g.slug}`, g.lang)}>{g.entry.data.title}</a></li>)}
+        <li><a href={href('/guides')}>{t.footer.allGuides}</a></li>
+      </ul>
+    </nav>
+    <nav aria-label={SITE.name}>
+      <h2>{SITE.name}</h2>
+      <ul>
+        <li><a href={href('/about')}>{t.footer.aboutUs}</a></li>
+        <li><a href={href('/contact')}>{t.footer.contact}</a></li>
+        <li><a href={href('/privacy')}>{t.footer.privacy}</a></li>
+        <li><a href={href('/terms', hasLegal(lang) ? lang : defaultLocale)}>{t.footer.terms}</a></li>
+        <li><a href={href('/tools')}>{t.footer.allTools}</a></li>
+        <li><a href={href('/guides/how-ocr-works', guides.find((g) => g.slug === 'how-ocr-works')?.lang)}>{t.footer.howOcrWorks}</a></li>
+      </ul>
+    </nav>
+  </div>
+  {siteLangs.length > 1 && (
+    <nav class="container-wide langs" aria-label={t.footer.languages}>
+      <ul>
+        {siteLangs.map((l) => (
+          <li><a href={href('/', l)} hreflang={languages[l].hreflang} lang={languages[l].hreflang} aria-current={l === lang ? 'true' : undefined}>{languages[l].label}</a></li>
+        ))}
+      </ul>
+    </nav>
+  )}
+  <div class="container-wide legal">
+    <p>{fmt(t.footer.copyright, { year, site: SITE.name })}</p>
+    <fieldset class="theme">
+      <legend class="visually-hidden">{t.theme.menu}</legend>
+      {THEMES.map((th) => (
+        <label title={themeTitles[th.value]}>
+          <input type="radio" name="theme" value={th.value} checked={th.value === 'system'} />
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d={th.icon} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span class="visually-hidden">{themeTitles[th.value]}</span>
+        </label>
+      ))}
+    </fieldset>
+  </div>
+</footer>
+
+<script>
+  import { getTheme, setTheme, onThemeChange, type ThemeChoice } from '../../lib/theme';
+
+  const inputs = [...document.querySelectorAll<HTMLInputElement>('.theme input[name="theme"]')];
+  const sync = (choice: ThemeChoice) => inputs.forEach((input) => (input.checked = input.value === choice));
+  sync(getTheme());
+  onThemeChange(sync);
+  inputs.forEach((input) => input.addEventListener('change', () => setTheme(input.value as ThemeChoice)));
+</script>
+
+<style>
+  .site-footer {
+    margin-top: 96px;
+    border-top: 1px solid var(--rule);
+    background: var(--paper);
+    padding: 64px 0 32px;
+    font-size: var(--t-sm);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 1.6fr) minmax(0, 0.7fr);
+    gap: 40px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: var(--t-md);
+    letter-spacing: var(--track-sub);
+    text-decoration: none;
+  }
+  .about p {
+    margin-top: 16px;
+    color: var(--ink-3);
+    max-width: 32ch;
+    line-height: 1.6;
+  }
+  h2 {
+    font-size: var(--t-sm);
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+  a {
+    color: var(--ink-3);
+    text-decoration: none;
+    transition: color 150ms var(--ease);
+  }
+  a:hover {
+    color: var(--ink);
+  }
+  a.brand {
+    color: var(--ink);
+  }
+  .langs ul {
+    list-style: none;
+    margin: 40px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+  }
+  .langs a[aria-current] {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  nav.tools ul {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+  }
+  .legal {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--ink-3);
+  }
+  .theme {
+    display: inline-flex;
+    gap: 2px;
+    margin: 0;
+    padding: 3px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-pill);
+    background: var(--sheet);
+  }
+  .theme label {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: var(--ink-3);
+    cursor: pointer;
+    transition:
+      color 150ms var(--ease),
+      background-color 150ms var(--ease);
+  }
+  .theme label:hover {
+    color: var(--ink);
+  }
+  .theme input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .theme label:has(input:checked) {
+    background: var(--well);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+  .theme label:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .about {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 560px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

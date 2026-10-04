@@ -1,0 +1,126 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../config/site';
+import { fmt, localizePath, type Locale } from '../i18n/config';
+import { useTranslations, localizeHtml } from '../i18n/ui';
+
+interface Props {
+  lang: Locale;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const p = t.sharePage;
+---
+<Base title={t.meta.shareTitle} description={fmt(t.meta.shareDescription, { site: SITE.name })} noindex {lang}>
+  <div class="container page" data-share data-fallback={p.fallbackTitle} data-copied={p.copied} data-site={SITE.name}>
+    <div id="shared" class="card" hidden>
+      <p class="eyebrow">{p.eyebrow}</p>
+      <h1 id="s-title"></h1>
+      <pre id="s-text"></pre>
+      <div class="acts">
+        <button type="button" class="btn btn-primary btn-pill" id="s-copy">{p.copy}</button>
+        <button type="button" class="btn btn-pill" id="s-dl">{p.download}</button>
+        <a class="btn btn-ghost btn-pill" href={localizePath('/', lang)}>{p.readOwn}</a>
+      </div>
+      <p class="note">{p.note}</p>
+    </div>
+    <div id="broken" class="card" hidden>
+      <h1>{p.brokenTitle}</h1>
+      <p set:html={localizeHtml(p.brokenHtml, lang)} />
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { decodeShare } from '../lib/util/share';
+  const root = document.querySelector<HTMLElement>('[data-share]')!;
+  const fallback = root.dataset.fallback ?? 'Shared text';
+  const data = await decodeShare(location.hash);
+  const $ = (id: string) => document.getElementById(id)!;
+  if (data) {
+    $('shared').hidden = false;
+    $('s-title').textContent = data.title || fallback;
+    $('s-text').textContent = data.text;
+    if (data.mode === 'code') $('s-text').classList.add('code');
+    document.title = `${data.title || fallback} | ${root.dataset.site}`;
+    $('s-copy').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(data.text);
+      $('s-copy').textContent = root.dataset.copied ?? 'Copied';
+    });
+    $('s-dl').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([data.text], { type: 'text/plain;charset=utf-8' }));
+      a.download = `${(data.title || 'shared-text').replace(/[^\w\- ]+/g, '').trim() || 'shared-text'}.txt`;
+      a.click();
+    });
+  } else {
+    $('broken').hidden = false;
+  }
+</script>
+
+<style>
+  .page {
+    padding-top: 64px;
+  }
+  .card {
+    max-width: 820px;
+    margin: 0 auto;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    padding: clamp(20px, 4vw, 40px);
+    box-shadow: var(--shadow-2);
+  }
+  h1 {
+    font-size: clamp(var(--t-2xl), 3vw, var(--t-3xl));
+    letter-spacing: var(--track-heading);
+    margin: 8px 0 24px;
+  }
+  #broken h1 {
+    margin-top: 0;
+  }
+  #broken p {
+    color: var(--ink-2);
+  }
+  #broken a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  #broken a:hover {
+    text-decoration: underline;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--sans);
+    font-size: var(--t-md);
+    line-height: 1.7;
+    margin: 0;
+    padding: 20px 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  pre:global(.code) {
+    font-family: var(--mono);
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .note {
+    margin-top: 16px;
+    font-size: var(--t-sm);
+    color: var(--ink-3);
+  }
+  @media (max-width: 640px) {
+    .page {
+      padding-top: 40px;
+    }
+  }
+</style>

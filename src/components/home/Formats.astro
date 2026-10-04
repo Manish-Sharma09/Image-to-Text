@@ -1,0 +1,108 @@
+---
+import { LANGUAGES } from '../../lib/ocr/languages';
+import { defaultLocale, fmt, languages as siteLanguages, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n/ui';
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = defaultLocale } = Astro.props;
+const f = useTranslations(lang).home.formats;
+// Language names in the page's own language.
+const names = new Intl.DisplayNames([siteLanguages[lang].hreflang], { type: 'language' });
+const nameOf = (l: (typeof LANGUAGES)[number]) => {
+  if (lang === defaultLocale) return l.name;
+  try {
+    const n = names.of(l.bcp47[0]);
+    return n && n !== l.bcp47[0] ? n : l.name;
+  } catch {
+    return l.name;
+  }
+};
+const list = new Intl.ListFormat(siteLanguages[lang].hreflang, { style: 'long', type: 'conjunction' });
+const popular = LANGUAGES.filter((l) => l.popular).map(nameOf).join(', ');
+const others = lang === defaultLocale ? LANGUAGES.filter((l) => !l.popular).map(nameOf).join(', ') : list.format(LANGUAGES.filter((l) => !l.popular).map(nameOf));
+---
+<section class="spec" aria-labelledby="spec-h">
+  <div class="container-wide">
+    <div class="intro">
+      <p class="eyebrow">{f.eyebrow}</p>
+      <h2 id="spec-h" class="h-section">{f.title}</h2>
+    </div>
+    <dl>
+      <div>
+        <dt>{f.filesTerm}</dt>
+        <dd>{f.filesText}</dd>
+      </div>
+      <div>
+        <dt>{f.waysTerm}</dt>
+        <dd>{f.waysText}</dd>
+      </div>
+      <div>
+        <dt>{f.contentTerm}</dt>
+        <dd>{f.contentText}</dd>
+      </div>
+      <div>
+        <dt>{f.languagesTerm}</dt>
+        <dd>{fmt(f.languagesText, { popular, others })}</dd>
+      </div>
+      <div>
+        <dt>{f.fixesTerm}</dt>
+        <dd>{f.fixesText}</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<style>
+  .spec {
+    padding: 128px 0 0;
+  }
+  .intro {
+    display: grid;
+    gap: 14px;
+  }
+  dl {
+    margin: 40px 0 0;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  dl div {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 24px;
+    padding: 20px 24px;
+  }
+  dl div + div {
+    border-top: 1px solid var(--rule);
+  }
+  dt {
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    line-height: 24px;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  dd {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    line-height: 1.7;
+    max-width: 80ch;
+  }
+  @media (max-width: 760px) {
+    .spec {
+      padding-top: 96px;
+    }
+  }
+  @media (max-width: 640px) {
+    dl div {
+      grid-template-columns: 1fr;
+      gap: 4px;
+      padding: 16px 18px;
+    }
+  }
+</style>

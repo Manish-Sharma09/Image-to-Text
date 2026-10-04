@@ -1,0 +1,6 @@
+---
+// Served by the Node server when a server-rendered route fails. Prerendered,
+// so it never shows error details.
+import ErrorView from '../views/ErrorView.astro';
+---
+<ErrorView status={500} />

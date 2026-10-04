@@ -1,0 +1,92 @@
+---
+interface Props {
+  /** `a` is plain text; `aHtml` is trusted, already-localized HTML. */
+  items: { q: string; a?: string; aHtml?: string }[];
+  heading: string;
+}
+const { items, heading } = Astro.props;
+---
+<section class="faq" aria-labelledby="faq-h">
+  <h2 id="faq-h">{heading}</h2>
+  <div class="list">
+    {items.map((f) => (
+      <details>
+        <summary>
+          <span>{f.q}</span>
+          <svg class="plus" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+        </summary>
+        {f.aHtml ? <p set:html={f.aHtml} /> : <p>{f.a}</p>}
+      </details>
+    ))}
+  </div>
+</section>
+
+<style>
+  .faq h2 {
+    font-size: clamp(var(--t-2xl), 2.6vw, var(--t-3xl));
+    letter-spacing: var(--track-heading);
+    margin-bottom: 24px;
+  }
+  .list {
+    border-top: 1px solid var(--rule);
+  }
+  details {
+    border-bottom: 1px solid var(--rule);
+  }
+  summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 0;
+    font-weight: 500;
+    font-size: var(--t-md);
+    color: var(--ink);
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary:focus-visible {
+    outline-offset: -2px;
+    border-radius: var(--r-sm);
+  }
+  .plus {
+    flex: none;
+    color: var(--ink-3);
+    transition: transform 250ms var(--ease-out), color 150ms var(--ease);
+  }
+  summary:hover .plus {
+    color: var(--ink);
+  }
+  details[open] .plus {
+    transform: rotate(45deg);
+    color: var(--ink);
+  }
+  /* Animated opening where ::details-content is supported. */
+  details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 300ms var(--ease-out),
+      content-visibility 300ms allow-discrete;
+  }
+  details[open]::details-content {
+    block-size: auto;
+  }
+  details p {
+    padding: 0 32px 20px 0;
+    color: var(--ink-2);
+    max-width: 70ch;
+    font-size: var(--t-md);
+    line-height: 1.65;
+  }
+  details p :global(a) {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  details p :global(a:hover) {
+    text-decoration: underline;
+  }
+</style>

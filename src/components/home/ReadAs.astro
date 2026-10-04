@@ -1,0 +1,416 @@
+---
+// "Read as" specimens: real images from /samples and the output the engine
+// actually produces for them. The sample contents are English (they're what
+// the images say); everything around them is translated.
+import { defaultLocale, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n/ui';
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = defaultLocale } = Astro.props;
+const t = useTranslations(lang);
+const r = t.home.readas;
+const tabs = [
+  { id: 'table', img: '/samples/table.png', pos: 'top left' },
+  { id: 'receipt', img: '/samples/receipt.png', pos: 'center 30%' },
+  { id: 'code', img: '/samples/code.png', pos: 'top left' },
+  { id: 'document', img: '/samples/document.png', pos: 'top left' },
+  { id: 'notes', img: '/samples/handwriting.png', pos: 'top left' },
+  { id: 'langs', img: '/samples/mixed-hindi.png', pos: 'top left' },
+] as const;
+---
+<section class="readas" aria-labelledby="readas-h" data-readas>
+  <div class="container-wide">
+    <div class="intro">
+      <p class="eyebrow">{r.eyebrow}</p>
+      <h2 id="readas-h" class="h-section">{r.title}</h2>
+      <p class="lede">{r.lede}</p>
+    </div>
+
+    <div class="tablist" role="tablist" aria-label={r.tabsLabel}>
+      {tabs.map((t, i) => (
+        <button type="button" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{r.tabs[t.id]}</button>
+      ))}
+    </div>
+
+    <div class="stage">
+    {tabs.map((t, i) => (
+      <div class="panel" role="tabpanel" id={`panel-${t.id}`} aria-labelledby={`tab-${t.id}`} hidden={i !== 0}>
+        <figure class="src">
+          <img src={t.img} alt={r.alts[t.id]} loading="lazy" decoding="async" style={`object-position:${t.pos}`} />
+          <span class="scan" aria-hidden="true"></span>
+          <figcaption>{r.caption}</figcaption>
+        </figure>
+        <div class="out">
+          {t.id === 'table' && (
+            <>
+              <p class="label"><span class="mk"></span>{r.table.label}</p>
+              <table lang="en">
+                <thead><tr><th>Region</th><th>Manager</th><th>Orders</th><th>Revenue</th><th>Growth</th></tr></thead>
+                <tbody>
+                  <tr><td>North</td><td>Priya Raman</td><td>1,284</td><td>$96,300</td><td>12.4%</td></tr>
+                  <tr><td>South</td><td>Daniel Okafor</td><td>967</td><td>$71,850</td><td>8.1%</td></tr>
+                  <tr><td>East</td><td>Mei Lin</td><td>1,502</td><td>$118,400</td><td>15.7%</td></tr>
+                  <tr><td>West</td><td>Lucas Moreau</td><td>1,118</td><td>$84,920</td><td>-2.3%</td></tr>
+                </tbody>
+              </table>
+              <p class="note">{r.table.note}</p>
+            </>
+          )}
+          {t.id === 'receipt' && (
+            <>
+              <p class="label"><span class="mk"></span>{r.receipt.label}</p>
+              <dl class="fields">
+                <div><dt>{r.receipt.business}</dt><dd lang="en">Harbor Light Cafe</dd></div>
+                <div><dt>{r.receipt.date}</dt><dd lang="en">03/14/2026, 08:42 AM</dd></div>
+                <div><dt>{r.receipt.subtotal}</dt><dd>29.50</dd></div>
+                <div><dt>{r.receipt.tax}</dt><dd>1.62</dd></div>
+                <div><dt>{r.receipt.total}</dt><dd><strong>$31.12</strong></dd></div>
+              </dl>
+              <p class="check">{r.receipt.check}</p>
+              <p class="note">{r.receipt.note}</p>
+            </>
+          )}
+          {t.id === 'code' && (
+            <>
+              <p class="label"><span class="mk"></span>{r.code.label}</p>
+<pre lang="en"><code>def invoice_total(items, tax_rate=0.055):
+    # items: list of (quantity, unit_price) pairs
+    subtotal = sum(Decimal(q) * Decimal(p) for q, p in items)
+    if subtotal &lt;= 0:
+        raise ValueError("invoice has no billable items")</code></pre>
+              <p class="note">{r.code.note}</p>
+            </>
+          )}
+          {t.id === 'document' && (
+            <>
+              <p class="label"><span class="mk"></span>{r.document.label}</p>
+              <div class="doc" lang="en">
+                <p class="h1">Caring for a Sourdough Starter</p>
+                <p>A sourdough starter is a living culture of wild yeast and bacteria. With a few minutes of attention each day…</p>
+                <p class="h2">Daily feeding</p>
+                <ul><li>Use unbleached flour whenever possible.</li><li>Filtered water helps if your tap water is heavily chlorinated.</li></ul>
+              </div>
+              <p class="note">{r.document.note}</p>
+            </>
+          )}
+          {t.id === 'notes' && (
+            <>
+              <p class="label"><span class="mk"></span>{r.notes.label}</p>
+              <div class="doc" lang="en">
+                <p>Meeting notes, Tuesday</p>
+                <ul><li>Move the launch review to Friday</li><li>Ask Nadia for the updated budget</li><li>Print 40 copies of the survey</li><li>Book the large room for 2pm</li></ul>
+                <p>Remember: water the plants!</p>
+              </div>
+              <p class="note">{r.notes.note}</p>
+            </>
+          )}
+          {t.id === 'langs' && (
+            <>
+              <p class="label"><span class="mk"></span>{r.langs.label}</p>
+              <div class="doc" lang="en">
+                <p>Welcome to the community library</p>
+                <p lang="hi">सामुदायिक पुस्तकालय में आपका स्वागत है</p>
+                <p>Opening hours: 9 am to 7 pm</p>
+                <p lang="hi">खुलने का समय: सुबह 9 बजे से शाम 7 बजे तक</p>
+              </div>
+              <p class="note">{r.langs.note}</p>
+            </>
+          )}
+        </div>
+      </div>
+    ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initReadAs } from '../../lib/motion/sections';
+
+  const section = document.querySelector<HTMLElement>('[data-readas]');
+  const motion = section ? initReadAs(section) : null;
+
+  for (const list of document.querySelectorAll<HTMLElement>('.readas [role="tablist"]')) {
+    const tabs = [...list.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const select = (tab: HTMLButtonElement) => {
+      for (const t of tabs) {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute('aria-controls')!)!.hidden = !on;
+      }
+      motion?.play(document.getElementById(tab.getAttribute('aria-controls')!)!);
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t));
+      t.addEventListener('keydown', (e) => {
+        const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        const next = tabs[(i + d + tabs.length) % tabs.length];
+        select(next);
+        next.focus();
+      });
+    });
+  }
+</script>
+
+<style>
+  .readas {
+    padding: 128px 0 0;
+  }
+  .intro {
+    display: grid;
+    gap: 14px;
+    max-width: 62ch;
+  }
+  .tablist {
+    display: flex;
+    gap: 8px;
+    margin: 32px 0 16px;
+    padding: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tablist::-webkit-scrollbar {
+    display: none;
+  }
+  [role='tab'] {
+    flex: none;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--rule);
+    border-radius: 64px;
+    background: var(--sheet);
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    font-weight: 500;
+    box-shadow: var(--shadow-1);
+    transition:
+      color 150ms var(--ease),
+      background-color 150ms var(--ease),
+      border-color 150ms var(--ease);
+  }
+  [role='tab']:hover {
+    color: var(--ink);
+    border-color: var(--rule-strong);
+  }
+  [role='tab'][aria-selected='true'] {
+    color: var(--on-ink);
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+  }
+  .panel[hidden] {
+    display: none;
+  }
+  .src {
+    margin: 0;
+    position: relative;
+    overflow: hidden;
+    background: var(--well);
+    border-right: 1px solid var(--rule);
+    min-height: 380px;
+  }
+  .src img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* Scan line, moved by GSAP when a specimen is shown. */
+  .scan {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 16px 2px color-mix(in srgb, var(--accent) 55%, transparent);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .scan::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2px;
+    height: 72px;
+    background: linear-gradient(to top, color-mix(in srgb, var(--accent) 18%, transparent), transparent);
+  }
+  figcaption {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--glass-strong);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--rule);
+    padding: 2px 10px;
+    border-radius: var(--r-pill);
+  }
+  .out {
+    padding: 24px 28px 28px;
+    display: grid;
+    align-content: start;
+    gap: 16px;
+    min-width: 0;
+    font-size: var(--t-sm);
+  }
+  .label {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 10px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-pill);
+    background: var(--paper);
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+  .mk {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--marker);
+    box-shadow: 0 0 0 3px var(--marker-soft);
+  }
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    font-size: var(--t-sm);
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  th,
+  td {
+    border-bottom: 1px solid var(--rule);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  th {
+    background: var(--paper);
+    font-weight: 500;
+    color: var(--ink-3);
+    font-size: var(--t-xs);
+  }
+  .fields {
+    margin: 0;
+    display: grid;
+    border-top: 1px solid var(--rule);
+  }
+  .fields div {
+    display: grid;
+    grid-template-columns: 9em 1fr;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  dt {
+    color: var(--ink-3);
+  }
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  dd strong {
+    font-weight: 600;
+  }
+  .check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--t-sm);
+    color: var(--ok);
+    font-weight: 500;
+  }
+  .check::before {
+    content: '';
+    width: 14px;
+    height: 14px;
+    flex: none;
+    border-radius: 50%;
+    background:
+      center / 10px no-repeat
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+      var(--ok);
+  }
+  pre {
+    margin: 0;
+    padding: 16px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    font-family: var(--mono);
+    font-size: var(--t-sm);
+    line-height: 1.65;
+    overflow-x: auto;
+  }
+  .doc {
+    display: grid;
+    gap: 8px;
+    font-size: var(--t-md);
+  }
+  .doc ul {
+    margin: 0;
+    padding-left: 1.2em;
+  }
+  .doc li::marker {
+    color: var(--ink-4);
+  }
+  .h1 {
+    font-weight: 600;
+    font-size: var(--t-xl);
+    letter-spacing: var(--track-sub);
+  }
+  .h2 {
+    font-weight: 600;
+    font-size: var(--t-lg);
+    letter-spacing: var(--track-sub);
+  }
+  .note {
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--ink-3);
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+  }
+  @media (max-width: 760px) {
+    .readas {
+      padding-top: 96px;
+    }
+    .panel {
+      grid-template-columns: 1fr;
+    }
+    .src {
+      min-height: 220px;
+      border-right: 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .out {
+      padding: 20px;
+    }
+  }
+</style>

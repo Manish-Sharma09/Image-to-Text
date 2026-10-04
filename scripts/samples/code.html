@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:980px;height:540px;background:#1e2127}
+.bar{height:34px;background:#16181d;display:flex;align-items:center;gap:8px;padding:0 14px}.dot{width:12px;height:12px;border-radius:50%}
+.tab{margin-left:16px;color:#9aa3b2;font:13px -apple-system,Helvetica,sans-serif}
+pre{margin:0;padding:22px 26px;font:17px/1.6 Menlo,"SF Mono",Consolas,monospace;color:#d7dae0}
+.k{color:#c678dd}.f{color:#61afef}.s{color:#98c379}.c{color:#7f848e}.n{color:#d19a66}
+</style></head><body><div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="tab">invoice_total.py</span></div>
+<pre><span class="k">from</span> decimal <span class="k">import</span> Decimal
+
+<span class="k">def</span> <span class="f">invoice_total</span>(items, tax_rate=<span class="n">0.055</span>):
+    <span class="c"># items: list of (quantity, unit_price) pairs</span>
+    subtotal = <span class="f">sum</span>(Decimal(q) * Decimal(p) <span class="k">for</span> q, p <span class="k">in</span> items)
+    tax = (subtotal * Decimal(<span class="f">str</span>(tax_rate))).quantize(Decimal(<span class="s">"0.01"</span>))
+    <span class="k">if</span> subtotal &lt;= <span class="n">0</span>:
+        <span class="k">raise</span> ValueError(<span class="s">"invoice has no billable items"</span>)
+    <span class="k">return</span> {<span class="s">"subtotal"</span>: subtotal, <span class="s">"tax"</span>: tax, <span class="s">"total"</span>: subtotal + tax}
+
+<span class="f">print</span>(invoice_total([(<span class="n">2</span>, <span class="s">"5.50"</span>), (<span class="n">1</span>, <span class="s">"4.25"</span>)]))</pre></body></html>

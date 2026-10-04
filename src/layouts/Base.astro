@@ -1,0 +1,187 @@
+---
+import { Font } from 'astro:assets';
+import '../styles/global.css';
+import { SITE } from '../config/site';
+import Header from '../components/site/Header.astro';
+import Footer from '../components/site/Footer.astro';
+import { defaultLocale, languages, localizePath, splitLocale, type Locale } from '../i18n/config';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Extra JSON-LD objects for this page. */
+  schema?: Record<string, unknown>[];
+  hasWorkspace?: boolean;
+  noindex?: boolean;
+  /** Full title override (skips the brand suffix). */
+  rawTitle?: boolean;
+  /** Open Graph type: 'article' for guides. */
+  ogType?: 'website' | 'article';
+  /** Share image (absolute or root-relative) and its description. */
+  ogImage?: string;
+  ogImageAlt?: string;
+  /** Article dates, for og:type article. */
+  published?: Date;
+  modified?: Date;
+  /** Page language. */
+  lang?: Locale;
+  /** Locales this page exists in (for hreflang). Defaults to this page only. */
+  alternates?: Locale[];
+}
+
+const {
+  title,
+  description,
+  schema = [],
+  hasWorkspace = false,
+  noindex = false,
+  rawTitle = false,
+  ogType = 'website',
+  published,
+  modified,
+  lang = defaultLocale,
+} = Astro.props;
+const t = useTranslations(lang);
+const ogImageAlt = Astro.props.ogImageAlt ?? t.meta.ogImageAlt;
+const site = Astro.site ?? new URL(SITE.url);
+// The route without its locale prefix ('/jpg-to-text'); each language's URL is built from it.
+const { path } = splitLocale(Astro.url.pathname.replace(/\/$/, '') || '/');
+const urlFor = (l: Locale) => new URL(localizePath(path, l), site).href;
+const canonical = urlFor(lang);
+const alternates = noindex ? [] : (Astro.props.alternates ?? [lang]);
+const hreflang = alternates.length > 1 ? alternates : [];
+// Search results show ~60 characters; add the brand only when it fits
+// (Google shows the site name separately, from the WebSite data below).
+const branded = `${title} | ${SITE.name}`;
+const fullTitle = rawTitle || branded.length > 65 ? title : branded;
+// Each language has a share image with its own headline (public/og-<lang>.png).
+const ogImage = new URL(Astro.props.ogImage ?? (lang === defaultLocale ? '/og.png' : `/og-${lang}.png`), site).href;
+const robots = noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+const graph = [
+  {
+    '@type': 'WebSite',
+    '@id': `${site.origin}/#website`,
+    name: SITE.name,
+    alternateName: 'Image to Text Converter',
+    url: site.origin + '/',
+    description: t.meta.siteDescription,
+    inLanguage: languages[lang].hreflang,
+    publisher: { '@id': `${site.origin}/#org` },
+  },
+  {
+    '@type': 'Organization',
+    '@id': `${site.origin}/#org`,
+    name: SITE.name,
+    url: site.origin + '/',
+    logo: {
+      '@type': 'ImageObject',
+      url: new URL('/android-chrome-512x512.png', site).href,
+      width: 512,
+      height: 512,
+    },
+    email: SITE.email,
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      email: SITE.email,
+      url: new URL('/contact', site).href,
+    },
+  },
+  ...schema,
+];
+---
+<!doctype html>
+<html lang={languages[lang].hreflang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {!noindex && <link rel="canonical" href={canonical} />}
+    {hreflang.map((l) => <link rel="alternate" hreflang={languages[l].hreflang} href={urlFor(l)} />)}
+    {hreflang.length > 0 && <link rel="alternate" hreflang="x-default" href={urlFor(defaultLocale)} />}
+    <meta name="robots" content={robots} />
+    <meta name="application-name" content={SITE.name} />
+    <meta name="apple-mobile-web-app-title" content={SITE.name} />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      // Before first paint: apply a saved theme choice, and hold [data-intro]
+      // elements hidden for the entrance animation when motion is allowed.
+      (function () {
+        var d = document.documentElement;
+        try {
+          var t = localStorage.getItem('copyable:theme');
+          if (t === 'light' || t === 'dark') {
+            d.dataset.theme = t;
+            document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
+              m.setAttribute('content', t === 'dark' ? '#0a0a0a' : '#fafafa');
+            });
+          }
+        } catch (e) {}
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('motion-pending');
+      })();
+    </script>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content={languages[lang].ogLocale} />
+    {hreflang.filter((l) => l !== lang).map((l) => <meta property="og:locale:alternate" content={languages[l].ogLocale} />)}
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:secure_url" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ogImageAlt} />
+    {ogType === 'article' && published && <meta property="article:published_time" content={published.toISOString()} />}
+    {ogType === 'article' && (modified ?? published) && <meta property="article:modified_time" content={(modified ?? published)!.toISOString()} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
+    <Font cssVariable="--font-sans" preload />
+    <Font cssVariable="--font-mono" />
+    <script type="application/ld+json" set:html={JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip" href="#main">{t.nav.skip}</a>
+    <Header hasWorkspace={hasWorkspace} lang={lang} path={path} alternates={alternates} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+    <slot name="end" />
+    <script>
+      if ('serviceWorker' in navigator && import.meta.env.PROD) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  .skip {
+    position: absolute;
+    left: 12px;
+    top: -60px;
+    z-index: 100;
+    background: var(--ink);
+    color: var(--on-ink);
+    padding: 10px 14px;
+    border-radius: var(--r-sm);
+    font-weight: 500;
+    font-size: var(--t-sm);
+  }
+  .skip:focus {
+    top: 12px;
+  }
+</style>

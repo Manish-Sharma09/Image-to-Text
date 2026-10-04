@@ -1,0 +1,61 @@
+---
+// The 404 and 500 pages. Each is prerendered once and served for every URL,
+// so it carries every locale's version in inert <template>s; a script swaps
+// in the one matching the URL's locale prefix (/es/…) before the header and
+// footer scripts run. Works on the Node server and on a pure static host.
+import Base from '../layouts/Base.astro';
+import Header from '../components/site/Header.astro';
+import Footer from '../components/site/Footer.astro';
+import ErrorContent from '../components/site/ErrorContent.astro';
+import { SITE } from '../config/site';
+import { defaultLocale, languages, type Locale } from '../i18n/config';
+import { useTranslations, siteLocales } from '../i18n/ui';
+
+interface Props {
+  status: 404 | 500;
+}
+const { status } = Astro.props;
+const metaFor = (l: Locale) => {
+  const m = useTranslations(l).meta;
+  return status === 404 ? { title: m.notFoundTitle, description: m.notFoundDescription } : { title: m.serverErrorTitle, description: m.serverErrorDescription };
+};
+const { title, description } = metaFor(defaultLocale);
+const others = siteLocales.filter((l) => l !== defaultLocale);
+---
+<Base {title} {description} noindex>
+  <ErrorContent {status} lang={defaultLocale} />
+  <Fragment slot="end">
+    {others.map((l) => (
+      <template data-error-locale={l} data-hreflang={languages[l].hreflang} data-title={`${metaFor(l).title} | ${SITE.name}`} data-skip={useTranslations(l).nav.skip}>
+        <Header lang={l} alternates={[]} />
+        <ErrorContent {status} lang={l} />
+        <Footer lang={l} />
+      </template>
+    ))}
+    <script is:inline>
+      (function () {
+        var d = document;
+        var tpl = d.querySelector('template[data-error-locale="' + location.pathname.split('/')[1] + '"]');
+        if (tpl) {
+          var f = tpl.content;
+          d.documentElement.lang = tpl.dataset.hreflang;
+          d.title = tpl.dataset.title;
+          var skip = d.querySelector('.skip');
+          if (skip) skip.textContent = tpl.dataset.skip;
+          ['[data-header]', '[data-error-page]', '.site-footer'].forEach(function (sel) {
+            var from = d.querySelector(sel);
+            var to = f.querySelector(sel);
+            if (from && to) from.replaceWith(to);
+          });
+        }
+        d.querySelectorAll('template[data-error-locale]').forEach(function (t) {
+          t.remove();
+        });
+        // Reports carry the address that failed.
+        d.querySelectorAll('a[data-report]').forEach(function (a) {
+          a.href += '&body=' + encodeURIComponent(location.href + '\n');
+        });
+      })();
+    </script>
+  </Fragment>
+</Base>

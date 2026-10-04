@@ -1,0 +1,11 @@
+---
+import GuideView from '../../views/GuideView.astro';
+import { listTranslated } from '../../i18n/content';
+
+export async function getStaticPaths() {
+  const guides = await listTranslated('guides', 'en');
+  return guides.map((item) => ({ params: { slug: item.slug }, props: { item } }));
+}
+const { item } = Astro.props;
+---
+<GuideView lang="en" {item} />

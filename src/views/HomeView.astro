@@ -1,0 +1,136 @@
+---
+import Base from '../layouts/Base.astro';
+import ToolHero from '../components/site/ToolHero.astro';
+import ReadAs from '../components/home/ReadAs.astro';
+import Shortcut from '../components/home/Shortcut.astro';
+import AfterText from '../components/home/AfterText.astro';
+import PrivacyBand from '../components/home/PrivacyBand.astro';
+import Formats from '../components/home/Formats.astro';
+import AboutTool from '../components/home/AboutTool.astro';
+import Faq from '../components/site/Faq.astro';
+import RelatedTools from '../components/site/RelatedTools.astro';
+import { SITE } from '../config/site';
+import { languages, localizePath, type Locale } from '../i18n/config';
+import { useTranslations, siteLocales } from '../i18n/ui';
+
+interface Props {
+  lang: Locale;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const h = t.home;
+const site = Astro.site ?? new URL(SITE.url);
+const pageUrl = new URL(localizePath('/', lang), site).href;
+
+const schema = [
+  {
+    '@type': 'WebApplication',
+    '@id': `${pageUrl}#app`,
+    name: SITE.name,
+    alternateName: t.schema.appAlternateNames,
+    url: pageUrl,
+    image: new URL('/og.png', site).href,
+    inLanguage: languages[lang].hreflang,
+    isAccessibleForFree: true,
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: t.schema.operatingSystem,
+    browserRequirements: t.schema.browserRequirements,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    description: t.meta.homeDescription,
+    featureList: t.schema.featureList,
+  },
+  {
+    '@type': 'HowTo',
+    name: t.schema.howToName,
+    description: t.schema.howToDescription,
+    inLanguage: languages[lang].hreflang,
+    totalTime: 'PT1M',
+    tool: { '@type': 'HowToTool', name: SITE.name },
+    step: h.howTo.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.name, text: s.text, url: `${pageUrl}#how-to-convert-image-to-text` })),
+  },
+  {
+    '@type': 'FAQPage',
+    inLanguage: languages[lang].hreflang,
+    mainEntity: h.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  },
+];
+---
+<Base title={t.meta.homeTitle} rawTitle description={t.meta.homeDescription} schema={schema} hasWorkspace {lang} alternates={siteLocales}>
+  <ToolHero h1={t.hero.homeH1} intro={t.hero.homeIntro} {lang} />
+  <ReadAs {lang} />
+  <Shortcut {lang} />
+  <AfterText {lang} />
+  <PrivacyBand {lang} />
+  <Formats {lang} />
+  <AboutTool {lang} />
+  <div class="container closing">
+    <Faq items={h.faq} heading={h.faqHeading} />
+    <RelatedTools heading={h.relatedHeading} {lang} />
+  </div>
+  <section class="cta" aria-labelledby="cta-h">
+    <div class="container inner">
+      <h2 id="cta-h">{h.cta.title}</h2>
+      <p class="lede">{h.cta.lede}</p>
+      <div class="actions">
+        <button type="button" class="btn btn-primary btn-lg btn-pill" data-pick-files>{h.cta.choose}</button>
+        <a class="btn btn-lg btn-pill" href={localizePath('/tools', lang)}>{h.cta.allTools}</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Jump back to the workspace and open the file picker in the same click.
+  document.querySelector('[data-pick-files]')?.addEventListener('click', () => {
+    const tool = document.getElementById('tool');
+    tool?.querySelector<HTMLInputElement>('input[type="file"]:not([capture])')?.click();
+    tool?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  });
+</script>
+
+<style>
+  .closing {
+    display: grid;
+    gap: 96px;
+    margin-top: 128px;
+  }
+  .cta {
+    margin-top: 128px;
+    border-top: 1px solid var(--rule);
+  }
+  .inner {
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+    padding-top: 96px;
+    text-align: center;
+  }
+  h2 {
+    font-size: clamp(2rem, 4.4vw, var(--t-4xl));
+    line-height: 1.05;
+    letter-spacing: var(--track-display);
+    max-width: 16ch;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  @media (max-width: 760px) {
+    .closing,
+    .cta {
+      margin-top: 96px;
+    }
+    .inner {
+      padding-top: 72px;
+    }
+  }
+  @media (max-width: 480px) {
+    .actions,
+    .actions .btn {
+      width: 100%;
+    }
+  }
+</style>

@@ -1,0 +1,250 @@
+---
+import Base from '../layouts/Base.astro';
+import Crumbs from '../components/site/Crumbs.astro';
+import Faq from '../components/site/Faq.astro';
+import { SITE } from '../config/site';
+import { pageSchema } from '../lib/schema';
+import { fmt, type Locale } from '../i18n/config';
+import { useTranslations, siteLocales, localizeHtml } from '../i18n/ui';
+
+interface Props {
+  lang: Locale;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const p = t.contactPage;
+const site = Astro.site ?? new URL(SITE.url);
+const description = fmt(t.meta.contactDescription, { site: SITE.name });
+
+// encodeURIComponent rather than URLSearchParams: some mail apps show '+' literally.
+const mailto = (subject?: string, body?: string) => {
+  const query = [subject && `subject=${encodeURIComponent(subject)}`, body && `body=${encodeURIComponent(body)}`].filter(Boolean).join('&');
+  return `mailto:${SITE.email}${query ? `?${query}` : ''}`;
+};
+
+// On phones the address wraps after the @ rather than mid-domain.
+const [local, domain] = SITE.email.split('@');
+const schema = pageSchema({ type: 'ContactPage', path: '/contact', name: t.meta.contactTitle, description, lang, site, homeName: t.hero.crumbHome });
+---
+<Base title={t.meta.contactTitle} {description} {schema} {lang} alternates={siteLocales}>
+  <div class="container page">
+    <header class="head">
+      <Crumbs {lang} current={p.eyebrow} />
+      <h1 class="h-display">{p.title}</h1>
+      <p class="lede">{p.lede}</p>
+    </header>
+
+    <section class="mail" aria-labelledby="mail-h">
+      <div class="who">
+        <h2 id="mail-h" class="eyebrow">{p.emailLabel}</h2>
+        <a class="addr" href={mailto()} translate="no">{local}@<wbr />{domain}</a>
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary btn-lg btn-pill" href={mailto(SITE.name)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h15A1.5 1.5 0 0 1 21 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5v-11Zm0 .5 9 6 9-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          {p.write}
+        </a>
+        <button type="button" class="btn btn-lg btn-pill" data-copy={SITE.email} data-copied={p.copied} hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h10.5v10.5H9V9Zm-4.5 6V4.5H15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span>{p.copy}</span>
+        </button>
+        <span class="visually-hidden" aria-live="polite" data-copy-status></span>
+      </div>
+      <div class="notes">
+        <p>{p.sensitiveNote}</p>
+        <p set:html={localizeHtml(p.privacyHtml, lang)} />
+      </div>
+    </section>
+
+    <section aria-labelledby="topics-h">
+      <h2 id="topics-h" class="h-section">{p.topicsTitle}</h2>
+      <ul class="topics">
+        {p.topics.map((x) => (
+          <li>
+            <h3>{x.title}</h3>
+            <p>{x.text}</p>
+            <a href={mailto(`${SITE.name}: ${x.subject}`, x.body)} aria-label={fmt(p.topicLinkLabel, { topic: x.title })}>
+              {p.topicLink}
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <Faq items={p.faq.map((f) => ({ q: f.q, aHtml: localizeHtml(f.aHtml, lang) }))} heading={p.faqTitle} />
+  </div>
+</Base>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('[data-copy]');
+  const status = document.querySelector<HTMLElement>('[data-copy-status]');
+  if (button && navigator.clipboard) {
+    const label = button.querySelector('span')!;
+    const idle = label.textContent;
+    let timer = 0;
+    button.hidden = false;
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy ?? '');
+      } catch {
+        return;
+      }
+      label.textContent = button.dataset.copied ?? idle;
+      if (status) status.textContent = button.dataset.copied ?? '';
+      clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        label.textContent = idle;
+        if (status) status.textContent = '';
+      }, 2000);
+    });
+  }
+</script>
+
+<style>
+  .page {
+    padding-top: 64px;
+    display: grid;
+    gap: 80px;
+  }
+  .head {
+    display: grid;
+    gap: 16px;
+    justify-items: start;
+  }
+  .head .lede {
+    max-width: 56ch;
+    font-size: var(--t-xl);
+    line-height: 1.55;
+  }
+
+  .mail {
+    margin-top: -24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 24px 32px;
+    padding: 36px;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-2);
+  }
+  .who {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+  .who h2 {
+    font-weight: 500;
+  }
+  .addr {
+    font-size: clamp(1.5rem, 3.4vw, var(--t-3xl));
+    font-weight: 600;
+    letter-spacing: var(--track-heading);
+    line-height: 1.15;
+    color: var(--ink);
+    text-decoration: none;
+    overflow-wrap: break-word;
+  }
+  .addr:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .notes {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 6px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-size: var(--t-sm);
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+  .notes p {
+    max-width: 80ch;
+  }
+  .notes :global(a) {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .notes :global(a:hover) {
+    text-decoration: underline;
+  }
+
+  .topics {
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .topics li {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    padding: 28px;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+  }
+  .topics h3 {
+    font-size: var(--t-xl);
+    letter-spacing: var(--track-sub);
+  }
+  .topics p {
+    color: var(--ink-2);
+    line-height: 1.6;
+    max-width: 52ch;
+  }
+  .topics a {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    font-weight: 500;
+    font-size: var(--t-sm);
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .topics a:hover {
+    text-decoration: underline;
+  }
+  .topics a svg {
+    transition: transform 200ms var(--ease-out);
+  }
+  .topics a:hover svg {
+    transform: translateX(2px);
+  }
+
+  @media (max-width: 760px) {
+    .mail {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+      padding: 24px;
+    }
+    .topics {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .topics li {
+      padding: 22px;
+    }
+  }
+  @media (max-width: 640px) {
+    .page {
+      padding-top: 40px;
+      gap: 64px;
+    }
+    .mail {
+      margin-top: -16px;
+    }
+  }
+</style>

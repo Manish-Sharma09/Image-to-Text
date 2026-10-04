@@ -1,0 +1,195 @@
+---
+// A legal document: numbered sections with link anchors, and a table of
+// contents that sticks beside the text on wide screens and folds on phones.
+import { fmt, languages, type Locale } from '../../i18n/config';
+import { useTranslations, localizeHtml } from '../../i18n/ui';
+
+interface Props {
+  sections: { id: string; title: string; html: string }[];
+  /** Page language (for the table of contents label). */
+  lang: Locale;
+  /** Language the sections are written in, when it differs from the page. */
+  docLang?: Locale;
+  /** Values for {placeholders} in the section HTML. */
+  vars: Record<string, string>;
+  /** Heading level of each section: 3 when the document sits under its own h2. */
+  level?: 2 | 3;
+}
+const { sections, lang, docLang = lang, vars, level = 2 } = Astro.props;
+const Heading = `h${level}` as 'h2' | 'h3';
+const t = useTranslations(lang);
+const num = (i: number) => String(i + 1).padStart(2, '0');
+---
+<div class="doc" lang={docLang !== lang ? languages[docLang].hreflang : undefined}>
+  <details class="toc" open data-toc>
+    <summary class="eyebrow">{t.legalPage.onThisPage}</summary>
+    <nav aria-label={t.legalPage.onThisPage}>
+      <ol>
+        {sections.map((s, i) => (
+          <li><a href={`#${s.id}`}><span class="n">{num(i)}</span>{s.title}</a></li>
+        ))}
+      </ol>
+    </nav>
+  </details>
+  <div class="body">
+    {sections.map((s, i) => (
+      <section id={s.id} aria-labelledby={`${s.id}-h`}>
+        <Heading id={`${s.id}-h`} class="title"><span class="n">{num(i)}</span> {s.title}</Heading>
+        <div class="prose" set:html={fmt(localizeHtml(s.html, docLang), vars)} />
+      </section>
+    ))}
+  </div>
+</div>
+
+<script>
+  // Beside the text the contents always show; on phones they fold, so they
+  // don't push the text down.
+  const toc = document.querySelector<HTMLDetailsElement>('[data-toc]');
+  const summary = toc?.querySelector('summary');
+  if (toc && summary) {
+    const narrow = matchMedia('(max-width: 960px)');
+    const sync = () => {
+      toc.open = !narrow.matches;
+      summary.tabIndex = narrow.matches ? 0 : -1;
+    };
+    sync();
+    narrow.addEventListener('change', sync);
+    summary.addEventListener('click', (e) => {
+      if (!narrow.matches) e.preventDefault();
+    });
+  }
+</script>
+
+<style>
+  .doc {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 80px;
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    max-height: calc(100vh - var(--header-h) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .toc summary {
+    list-style: none;
+    display: block;
+    margin-bottom: 12px;
+  }
+  .toc summary::-webkit-details-marker {
+    display: none;
+  }
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--rule);
+    display: grid;
+    gap: 2px;
+    font-size: var(--t-sm);
+  }
+  .toc a {
+    display: flex;
+    gap: 10px;
+    padding: 4px 0 4px 14px;
+    margin-left: -1px;
+    border-left: 1px solid transparent;
+    color: var(--ink-3);
+    text-decoration: none;
+    line-height: 1.45;
+    transition:
+      color 150ms var(--ease),
+      border-color 150ms var(--ease);
+  }
+  .toc a:hover {
+    color: var(--ink);
+    border-left-color: var(--ink);
+  }
+  .n {
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    color: var(--ink-4);
+    font-variant-numeric: tabular-nums;
+  }
+  .toc .n {
+    line-height: inherit;
+    padding-top: 1px;
+  }
+  .body {
+    display: grid;
+    gap: 48px;
+    min-width: 0;
+  }
+  section {
+    scroll-margin-top: calc(var(--header-h) + 24px);
+  }
+  section + section {
+    padding-top: 48px;
+    border-top: 1px solid var(--rule);
+  }
+  .title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-size: var(--t-2xl);
+    line-height: 1.25;
+    letter-spacing: var(--track-sub);
+    margin-bottom: 16px;
+  }
+  .title .n {
+    font-size: var(--t-sm);
+  }
+  .prose :global(a) {
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 960px) {
+    .doc {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 40px;
+    }
+    .toc {
+      position: static;
+      max-height: none;
+      border: 1px solid var(--rule);
+      border-radius: var(--r-lg);
+      background: var(--sheet);
+      padding: 0 20px;
+    }
+    .toc summary {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 52px;
+      margin: 0;
+    }
+    .toc summary::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: translateY(-2px) rotate(45deg);
+      transition: transform 200ms var(--ease-out);
+    }
+    .toc[open] summary::after {
+      transform: translateY(2px) rotate(-135deg);
+    }
+    .toc nav {
+      padding-bottom: 16px;
+    }
+    .body {
+      gap: 40px;
+    }
+    section + section {
+      padding-top: 40px;
+    }
+    .title {
+      font-size: var(--t-xl);
+    }
+  }
+</style>

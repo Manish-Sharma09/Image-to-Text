@@ -1,0 +1,148 @@
+---
+import Base from '../layouts/Base.astro';
+import { localizePath, plural, type Locale } from '../i18n/config';
+import { useTranslations, siteLocales } from '../i18n/ui';
+import { listLocalized } from '../i18n/content';
+
+interface Props {
+  lang: Locale;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const p = t.toolsPage;
+const tools = await listLocalized('tools', lang);
+const groups: { title: string; ids: string[] }[] = [
+  { title: p.groupHave, ids: ['screenshot-to-text', 'photo-to-text', 'pdf-to-text', 'jpg-to-text', 'png-to-text'] },
+  { title: p.groupFormat, ids: ['image-to-word', 'image-to-excel', 'image-to-pdf', 'image-to-markdown', 'image-to-json'] },
+  { title: p.groupSpecial, ids: ['handwriting-to-text', 'receipt-ocr', 'invoice-ocr', 'code-screenshot-to-text'] },
+];
+const bySlug = new Map(tools.map((x) => [x.slug, x]));
+---
+<Base title={t.meta.toolsTitle} description={t.meta.toolsDescription} {lang} alternates={siteLocales}>
+  <div class="container page">
+    <header>
+      <p class="eyebrow">{plural(lang, tools.length, p.count)}</p>
+      <h1 class="h-display">{p.title}</h1>
+      <p class="lede">{p.lede}</p>
+      <a class="btn btn-primary btn-lg btn-pill" href={localizePath('/', lang)}>{p.open}</a>
+    </header>
+    {groups.map((g) => (
+      <section aria-labelledby={`g-${g.ids[0]}`}>
+        <h2 id={`g-${g.ids[0]}`}>{g.title}</h2>
+        <div class="frame">
+          <ul>
+            {g.ids.map((id) => bySlug.get(id)).filter((x) => !!x).map((x) => (
+              <li>
+                <a href={localizePath(`/${x!.slug}`, x!.lang)}>
+                  <strong>
+                    {x!.entry.data.navLabel}
+                    <svg class="arr" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  </strong>
+                  <span>{x!.entry.data.intro}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    ))}
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: 64px;
+    display: grid;
+    gap: 64px;
+  }
+  header {
+    display: grid;
+    gap: 16px;
+    justify-items: start;
+  }
+  header .lede {
+    max-width: 60ch;
+  }
+  header .btn {
+    margin-top: 8px;
+  }
+  h2 {
+    font-size: var(--t-xl);
+    letter-spacing: var(--track-sub);
+    margin-bottom: 16px;
+  }
+  /* Shared-hairline grid: the list overhangs the frame by 1px on the right
+     and bottom so the outer cells' borders are clipped by the frame. */
+  .frame {
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    background: var(--sheet);
+    overflow: hidden;
+  }
+  ul {
+    list-style: none;
+    margin: 0 -1px -1px 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  li {
+    display: flex;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .frame a {
+    flex: 1;
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    padding: 24px;
+    text-decoration: none;
+    transition: background-color 150ms var(--ease);
+  }
+  .frame a:hover {
+    background: var(--paper);
+  }
+  .frame a:focus-visible {
+    outline-offset: -2px;
+  }
+  .frame strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--t-lg);
+    font-weight: 600;
+    letter-spacing: var(--track-sub);
+    color: var(--ink);
+  }
+  .arr {
+    color: var(--ink-4);
+    transition: transform 200ms var(--ease-out), color 150ms var(--ease);
+  }
+  .frame a:hover .arr {
+    color: var(--ink);
+    transform: translateX(2px);
+  }
+  .frame span {
+    color: var(--ink-3);
+    font-size: var(--t-sm);
+    line-height: 1.55;
+  }
+  @media (max-width: 900px) {
+    ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 640px) {
+    .page {
+      padding-top: 40px;
+      gap: 48px;
+    }
+    ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .frame a {
+      padding: 20px;
+    }
+  }
+</style>

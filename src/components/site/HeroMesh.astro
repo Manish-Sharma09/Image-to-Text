@@ -1,0 +1,58 @@
+---
+// Decorative mesh gradient behind the hero. The CSS layer is the fallback
+// (no WebGL, no JS, before load); the WebGL canvas fades in over it.
+---
+<div class="mesh" aria-hidden="true" data-mesh>
+  <div class="fallback"></div>
+  <canvas></canvas>
+</div>
+
+<style>
+  .mesh {
+    position: absolute;
+    inset: calc(-1 * var(--header-h)) 0 -300px 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 20%, #000 66%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 20%, #000 66%, transparent 100%);
+  }
+  canvas,
+  .fallback {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  canvas {
+    opacity: 0;
+  }
+  .fallback {
+    opacity: var(--fallback-opacity, 0.55);
+    filter: blur(48px);
+    background:
+      radial-gradient(38% 40% at 12% 52%, var(--g-cyan), transparent 70%),
+      radial-gradient(34% 44% at 32% 46%, var(--g-blue), transparent 72%),
+      radial-gradient(36% 40% at 54% 54%, var(--g-violet), transparent 70%),
+      radial-gradient(32% 42% at 74% 46%, var(--g-pink), transparent 72%),
+      radial-gradient(30% 36% at 90% 54%, var(--g-amber), transparent 70%);
+    transition: opacity 1.6s var(--ease);
+  }
+  [data-mesh='ready'] .fallback {
+    opacity: 0;
+  }
+  [data-mesh='lost'] canvas {
+    opacity: 0 !important;
+  }
+  [data-mesh='lost'] .fallback {
+    opacity: var(--fallback-opacity, 0.55);
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .mesh {
+      --fallback-opacity: 0.4;
+    }
+  }
+  :global(:root[data-theme='dark']) .mesh {
+    --fallback-opacity: 0.4;
+  }
+</style>

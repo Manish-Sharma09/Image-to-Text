@@ -1,0 +1,275 @@
+---
+import { defaultLocale, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n/ui';
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = defaultLocale } = Astro.props;
+const a = useTranslations(lang).home.after;
+const [metaBefore, metaAfter = ''] = a.pagesMeta.split('{n}');
+---
+<section class="after" aria-labelledby="after-h" data-after>
+  <div class="container-wide">
+    <div class="intro">
+      <p class="eyebrow">{a.eyebrow}</p>
+      <h2 id="after-h" class="h-section">{a.title}</h2>
+    </div>
+    <div class="cols">
+      <article class="cell review">
+        <div class="mock" aria-hidden="true">
+          <div class="img">
+            <span class="ln"></span>
+            <span class="ln hl"><span class="hl-wash"></span></span>
+            <span class="ln short"></span>
+          </div>
+          <div class="txt">
+            <p>Receipt #: 20481</p>
+            <p class="cur"><span class="cur-wash"></span>Date: 03/14/2026 <span class="sq">08:42</span> AM</p>
+            <p>2 x Oat Latte&nbsp;&nbsp;11.00</p>
+          </div>
+        </div>
+        <h3>{a.reviewTitle}</h3>
+        <p>{a.reviewText}</p>
+      </article>
+      <article class="cell pages">
+        <div class="mock" aria-hidden="true">
+          <div class="stack"><span></span><span></span><span></span></div>
+          <div class="meter"><span class="fill"></span></div>
+          <p class="meta">{metaBefore}<span data-count>12</span>{metaAfter}</p>
+        </div>
+        <h3>{a.pagesTitle}</h3>
+        <p>{a.pagesText}</p>
+      </article>
+      <article class="cell out">
+        <div class="mock" aria-hidden="true">
+          <ul class="fmt"><li>.docx</li><li>.xlsx</li><li>.pdf</li><li>.md</li><li>.csv</li><li>.json</li><li>.txt</li><li>.html</li></ul>
+        </div>
+        <h3>{a.outTitle}</h3>
+        <p>{a.outText}</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initAfterText } from '../../lib/motion/sections';
+  const section = document.querySelector<HTMLElement>('[data-after]');
+  if (section) initAfterText(section);
+</script>
+
+<style>
+  .after {
+    padding: 128px 0 0;
+  }
+  .intro {
+    display: grid;
+    gap: 14px;
+  }
+  h2 {
+    max-width: 22ch;
+  }
+  /* Shared-hairline grid: the wrapper's background shows through 1px gaps. */
+  .cols {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: 1.25fr 1fr 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  .cell {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    padding: 24px 24px 28px;
+    background: var(--sheet);
+  }
+  h3 {
+    font-size: var(--t-xl);
+    line-height: 1.3;
+    margin-top: 8px;
+  }
+  .cell > p {
+    color: var(--ink-3);
+    font-size: var(--t-sm);
+    line-height: 1.65;
+  }
+  .mock {
+    position: relative;
+    height: 176px;
+    padding: 18px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    background:
+      radial-gradient(circle at 1px 1px, var(--rule-strong) 1px, transparent 1.2px) 0 0 / 14px 14px,
+      var(--paper);
+    overflow: hidden;
+  }
+
+  /* Review: the highlighted line on the image and in the text. */
+  .review .mock {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 14px;
+  }
+  .img {
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    padding: 18px 14px;
+    display: grid;
+    gap: 16px;
+    align-content: start;
+    box-shadow: var(--shadow-1);
+  }
+  .ln {
+    position: relative;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--ink-4);
+  }
+  .ln.hl {
+    background: var(--ink);
+  }
+  .hl-wash {
+    position: absolute;
+    inset: -6px -6px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--marker) 22%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--marker) 50%, transparent);
+  }
+  .ln.short {
+    width: 60%;
+  }
+  .txt {
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    line-height: 1.5;
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    padding-top: 10px;
+    color: var(--ink-2);
+  }
+  .txt p {
+    white-space: nowrap;
+  }
+  .txt .cur {
+    position: relative;
+    color: var(--ink);
+  }
+  .cur-wash {
+    position: absolute;
+    inset: -3px -6px;
+    z-index: -1;
+    border-radius: 4px;
+    background: var(--marker-soft);
+    box-shadow: inset 2px 0 0 var(--marker);
+  }
+  .txt .cur {
+    isolation: isolate;
+  }
+  .sq {
+    display: inline-block;
+    text-decoration: underline wavy var(--query);
+    text-underline-offset: 3px;
+  }
+
+  /* Pages: a small stack and a progress meter. */
+  .stack {
+    position: relative;
+    height: 96px;
+  }
+  .stack span {
+    position: absolute;
+    top: 4px;
+    width: 64px;
+    height: 84px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 6px;
+    background:
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 10px 16px / 40px 3px no-repeat,
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 10px 26px / 32px 3px no-repeat,
+      linear-gradient(var(--rule-strong), var(--rule-strong)) 10px 36px / 40px 3px no-repeat,
+      var(--sheet);
+    box-shadow: var(--shadow-2);
+  }
+  .stack span:nth-child(1) {
+    left: 6px;
+    transform: rotate(-6deg);
+  }
+  .stack span:nth-child(2) {
+    left: 50px;
+    transform: rotate(3deg);
+  }
+  .stack span:nth-child(3) {
+    left: 94px;
+    border-color: color-mix(in srgb, var(--marker) 60%, transparent);
+    box-shadow:
+      0 0 0 3px var(--marker-soft),
+      var(--shadow-2);
+  }
+  .meter {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--well);
+    margin-top: 22px;
+    overflow: hidden;
+  }
+  .fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--g-blue), var(--g-cyan));
+    transform: scaleX(0.6);
+    transform-origin: left center;
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    color: var(--ink-3);
+    margin-top: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Formats */
+  .fmt {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .fmt li {
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    padding: 6px 12px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-pill);
+    background: var(--sheet);
+    box-shadow: var(--shadow-1);
+    color: var(--ink-2);
+  }
+  .fmt li:first-child {
+    background: var(--marker);
+    border-color: var(--marker);
+    color: var(--on-marker);
+  }
+
+  @media (max-width: 980px) {
+    .cols {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 760px) {
+    .after {
+      padding-top: 96px;
+    }
+  }
+</style>

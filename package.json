@@ -1,20 +1,48 @@
 {
-  "name": "pale-parallax",
+  "name": "copyable",
   "type": "module",
   "version": "0.0.1",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
+    "vendor": "node scripts/vendor-ocr.mjs",
+    "predev": "node scripts/vendor-ocr.mjs",
     "dev": "astro dev",
+    "prebuild": "node scripts/vendor-ocr.mjs",
     "build": "astro build",
     "preview": "astro preview",
+    "start": "node ./dist/server/entry.mjs",
+    "check": "astro check",
+    "test": "node scripts/test.mjs",
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.3.5"
+    "@anthropic-ai/sdk": "^0.131.0",
+    "@astrojs/node": "^11.1.6",
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/svelte": "^9.0.1",
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/search": "^6.7.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
+    "astro": "^7.3.5",
+    "fflate": "^0.8.3",
+    "gsap": "^3.15.0",
+    "pdfjs-dist": "^6.3.289",
+    "svelte": "^5.57.1",
+    "tesseract.js": "^7.0.0",
+    "three": "^0.186.1",
+    "typescript": "^6.0.3",
+    "utif": "^3.1.0"
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/three": "^0.186.0",
+    "@types/utif": "^3.0.6"
   }
 }

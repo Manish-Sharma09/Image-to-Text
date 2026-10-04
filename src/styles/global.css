@@ -1,0 +1,573 @@
+/* Image to Text App design tokens and base styles — Geist edition (see DESIGN.md).
+   Ink on a near-white canvas; 1px hairlines define every surface. Colour is
+   confined to the hero mesh gradient (WebGL) and the blue accent, which marks
+   the link between a line of text and its place on the image, selection and
+   focus. Glass (backdrop blur) is reserved for chrome that floats: the
+   header, the workspace bezel, menus, dialogs and toasts. */
+
+:root {
+  color-scheme: light;
+  interpolate-size: allow-keywords;
+
+  /* Surfaces */
+  --paper: #fafafa;
+  --sheet: #ffffff;
+  --well: #f2f2f2;
+
+  /* Ink ladder (--ink-3 is AA on white; --ink-4 is for non-text only) */
+  --ink: #171717;
+  --ink-2: #4d4d4d;
+  --ink-3: #666666;
+  --ink-4: #8f8f8f;
+  --faint: #a1a1a1;
+
+  /* Hairlines */
+  --rule: #ebebeb;
+  --rule-strong: #dedede;
+
+  /* Accent: Vercel blue. "marker" is the product's highlight — the line on
+     the image tied to the text — kept as its own name for the workspace. */
+  --accent: #0070f3;
+  --accent-deep: #0761d1;
+  --accent-soft: #d3e5ff;
+  --marker: #0070f3;
+  --marker-soft: #e6f0ff;
+  --marker-line: #0070f3;
+  --on-marker: #ffffff;
+
+  /* Semantic */
+  --query: #ab570a;
+  --warn-soft: #fff4dc;
+  --ok: #0761d1;
+  --danger: #c50000;
+  --danger-soft: #ffebeb;
+  --info-soft: #f2f2f2;
+  --on-ink: #ffffff;
+  --scrim: rgb(0 0 0 / 0.28);
+
+  /* Mesh gradient stops (hero only) */
+  --g-cyan: #00dfd8;
+  --g-blue: #007cf0;
+  --g-violet: #7928ca;
+  --g-pink: #ff0080;
+  --g-amber: #f9cb28;
+
+  /* Glass */
+  --glass: rgb(255 255 255 / 0.62);
+  --glass-strong: rgb(255 255 255 / 0.84);
+  --glass-edge: rgb(255 255 255 / 0.7);
+  --glass-blur: saturate(180%) blur(18px);
+
+  /* Elevation: 0 flat · 1 whisper · 2 floating */
+  --shadow-1: 0 1px 1px rgb(0 0 0 / 0.04);
+  --shadow-2: 0 2px 2px rgb(0 0 0 / 0.04), 0 8px 16px -4px rgb(0 0 0 / 0.04);
+  --shadow-pop: 0 1px 1px rgb(0 0 0 / 0.02), 0 4px 8px -4px rgb(0 0 0 / 0.06), 0 16px 24px -8px rgb(0 0 0 / 0.08);
+  --shadow-hero: 0 1px 1px rgb(0 0 0 / 0.03), 0 12px 24px -12px rgb(0 0 0 / 0.08), 0 40px 80px -32px rgb(0 0 0 / 0.16);
+
+  /* Radius: 6px chrome, 12–16px cards, pills for marketing CTAs */
+  --r-xs: 6px;
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 100px;
+
+  --sans: var(--font-sans, 'Geist'), 'Geist', Arial, system-ui, sans-serif;
+  --mono: var(--font-mono, 'Geist Mono'), 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Type scale: 12 / 14 / 16 / 18 / 20 / 24 / 32 / 48 / 64 */
+  --t-xs: 0.75rem;
+  --t-sm: 0.875rem;
+  --t-md: 1rem;
+  --t-lg: 1.125rem;
+  --t-xl: 1.25rem;
+  --t-2xl: 1.5rem;
+  --t-3xl: 2rem;
+  --t-4xl: 3rem;
+  --t-5xl: 4rem;
+
+  /* Tracking tightens with size: 48px → -2.4px, 32px → -1.28px, 20px → -0.4px */
+  --track-display: -0.05em;
+  --track-heading: -0.04em;
+  --track-sub: -0.02em;
+
+  --gutter: clamp(16px, 4vw, 40px);
+  --measure: 68ch;
+  --container: 1200px;
+  --container-wide: 1440px;
+  --header-h: 64px;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Japanese and Korean: Geist has no CJK glyphs, so fall back to the native
+   system faces for each script, drop the negative display tracking, and use
+   each language's line-breaking conventions. */
+:root:lang(ja) {
+  --sans: var(--font-sans, 'Geist'), 'Geist', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', 'Yu Gothic', Meiryo, system-ui, sans-serif;
+}
+:root:lang(ko) {
+  --sans: var(--font-sans, 'Geist'), 'Geist', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif;
+}
+:root:is(:lang(ja), :lang(ko)) {
+  --track-display: -0.01em;
+  --track-heading: 0;
+  --track-sub: 0;
+}
+:lang(ja) :is(h1, h2, h3, .lede) {
+  word-break: auto-phrase;
+}
+:lang(ko) {
+  word-break: keep-all;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --paper: #0a0a0a;
+    --sheet: #111111;
+    --well: #1a1a1a;
+    --ink: #ededed;
+    --ink-2: #a1a1a1;
+    --ink-3: #8f8f8f;
+    --ink-4: #6b6b6b;
+    --faint: #5c5c5c;
+    --rule: #242424;
+    --rule-strong: #333333;
+    --accent: #3291ff;
+    --accent-deep: #0070f3;
+    --accent-soft: rgb(50 145 255 / 0.28);
+    --marker-soft: rgb(50 145 255 / 0.16);
+    --marker-line: #3291ff;
+    --query: #f5a623;
+    --warn-soft: rgb(245 166 35 / 0.12);
+    --ok: #3291ff;
+    --danger: #ff4d4d;
+    --danger-soft: rgb(255 77 77 / 0.12);
+    --info-soft: #1a1a1a;
+    --on-ink: #0a0a0a;
+    --scrim: rgb(0 0 0 / 0.6);
+    --glass: rgb(17 17 17 / 0.58);
+    --glass-strong: rgb(17 17 17 / 0.82);
+    --glass-edge: rgb(255 255 255 / 0.08);
+    --shadow-1: 0 1px 1px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 2px 2px rgb(0 0 0 / 0.3), 0 8px 16px -4px rgb(0 0 0 / 0.4);
+    --shadow-pop: 0 1px 1px rgb(0 0 0 / 0.3), 0 4px 8px -4px rgb(0 0 0 / 0.5), 0 16px 24px -8px rgb(0 0 0 / 0.6);
+    --shadow-hero: 0 1px 1px rgb(0 0 0 / 0.4), 0 12px 24px -12px rgb(0 0 0 / 0.5), 0 40px 80px -32px rgb(0 0 0 / 0.8);
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #0a0a0a;
+  --sheet: #111111;
+  --well: #1a1a1a;
+  --ink: #ededed;
+  --ink-2: #a1a1a1;
+  --ink-3: #8f8f8f;
+  --ink-4: #6b6b6b;
+  --faint: #5c5c5c;
+  --rule: #242424;
+  --rule-strong: #333333;
+  --accent: #3291ff;
+  --accent-deep: #0070f3;
+  --accent-soft: rgb(50 145 255 / 0.28);
+  --marker-soft: rgb(50 145 255 / 0.16);
+  --marker-line: #3291ff;
+  --query: #f5a623;
+  --warn-soft: rgb(245 166 35 / 0.12);
+  --ok: #3291ff;
+  --danger: #ff4d4d;
+  --danger-soft: rgb(255 77 77 / 0.12);
+  --info-soft: #1a1a1a;
+  --on-ink: #0a0a0a;
+  --scrim: rgb(0 0 0 / 0.6);
+  --glass: rgb(17 17 17 / 0.58);
+  --glass-strong: rgb(17 17 17 / 0.82);
+  --glass-edge: rgb(255 255 255 / 0.08);
+  --shadow-1: 0 1px 1px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 2px 2px rgb(0 0 0 / 0.3), 0 8px 16px -4px rgb(0 0 0 / 0.4);
+  --shadow-pop: 0 1px 1px rgb(0 0 0 / 0.3), 0 4px 8px -4px rgb(0 0 0 / 0.5), 0 16px 24px -8px rgb(0 0 0 / 0.6);
+  --shadow-hero: 0 1px 1px rgb(0 0 0 / 0.4), 0 12px 24px -12px rgb(0 0 0 / 0.5), 0 40px 80px -32px rgb(0 0 0 / 0.8);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 16px);
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.15;
+  letter-spacing: var(--track-heading);
+  font-weight: 600;
+  margin: 0;
+  text-wrap: balance;
+}
+h3,
+h4 {
+  letter-spacing: var(--track-sub);
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a,
+button,
+label,
+summary,
+[role='tab'] {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The editor shows a caret; a ring around the whole text area is noise. */
+.cm-content:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.75em;
+  font-family: var(--mono);
+  font-size: 0.8em;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  padding: 0 0.45em;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-xs);
+  background: var(--sheet);
+  box-shadow: inset 0 -1px 0 var(--rule-strong);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: calc(var(--container) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.container-wide {
+  width: 100%;
+  max-width: calc(var(--container-wide) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Uppercase Geist Mono label that introduces a section, spec-sheet style. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Section heading scale shared by Astro sections. */
+.h-display {
+  font-size: clamp(2.25rem, 4.6vw, var(--t-4xl));
+  line-height: 1.04;
+  letter-spacing: var(--track-display);
+}
+.h-section {
+  font-size: clamp(1.75rem, 3vw, var(--t-3xl));
+  line-height: 1.2;
+  letter-spacing: var(--track-heading);
+}
+.lede {
+  font-size: var(--t-lg);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* Floating chrome. Falls back to a solid surface without backdrop-filter. */
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--sheet);
+  }
+}
+
+/* Buttons shared by Astro and Svelte components.
+   .btn is the 6px app/nav control; add .btn-pill for marketing CTAs. */
+.btn {
+  --btn-bg: var(--sheet);
+  --btn-fg: var(--ink);
+  --btn-bd: var(--rule);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--btn-bd);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: 500;
+  font-size: var(--t-sm);
+  line-height: 20px;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-1);
+  transition:
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease),
+    color 150ms var(--ease),
+    transform 80ms var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover {
+  --btn-bg: var(--well);
+  text-decoration: none;
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  --btn-bg: var(--ink);
+  --btn-fg: var(--on-ink);
+  --btn-bd: var(--ink);
+}
+.btn-primary:hover {
+  --btn-bg: color-mix(in srgb, var(--ink) 84%, var(--paper));
+  --btn-bd: color-mix(in srgb, var(--ink) 84%, var(--paper));
+}
+.btn-ghost {
+  --btn-bg: transparent;
+  --btn-bd: transparent;
+  box-shadow: none;
+}
+.btn-ghost:hover {
+  --btn-bg: color-mix(in srgb, var(--ink) 6%, transparent);
+  --btn-bd: transparent;
+}
+.btn-lg {
+  min-height: 48px;
+  padding: 0 20px;
+  font-size: var(--t-md);
+}
+.btn-pill {
+  border-radius: var(--r-pill);
+  padding-inline: 18px;
+}
+.btn-lg.btn-pill {
+  padding-inline: 24px;
+}
+.btn-icon {
+  padding: 0;
+  width: 40px;
+}
+
+.prose {
+  max-width: var(--measure);
+  font-size: var(--t-md);
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+.prose > * + * {
+  margin-top: 1.1em;
+}
+.prose h2 {
+  color: var(--ink);
+  font-size: var(--t-2xl);
+  line-height: 1.25;
+  margin-top: 2.2em;
+}
+.prose h3 {
+  color: var(--ink);
+  font-size: var(--t-xl);
+  line-height: 1.3;
+  margin-top: 1.8em;
+}
+.prose h2 + *,
+.prose h3 + * {
+  margin-top: 0.6em;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.3em;
+}
+.prose li + li {
+  margin-top: 0.4em;
+}
+.prose li::marker {
+  color: var(--ink-4);
+}
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.prose a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.prose a:hover {
+  text-decoration: underline;
+}
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+  background: var(--well);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-xs);
+  padding: 0.1em 0.35em;
+  color: var(--ink);
+}
+.prose pre {
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  line-height: 1.6;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  padding: 16px;
+  overflow-x: auto;
+  color: var(--ink);
+}
+.prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--t-sm);
+}
+.prose th,
+.prose td {
+  border-bottom: 1px solid var(--rule);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.prose th {
+  color: var(--ink);
+  font-weight: 500;
+  background: var(--well);
+}
+.prose blockquote {
+  margin: 0;
+  padding: 2px 0 2px 16px;
+  border-left: 2px solid var(--ink);
+  color: var(--ink);
+}
+
+/* Theme changes cross-fade (lib/theme.ts uses a view transition when supported). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* JS-driven entrances. Elements marked [data-intro] start hidden only while
+   html.motion-pending is set (added before paint when motion is allowed);
+   a failsafe reveals them if the animation script never runs. */
+.motion-pending [data-intro] {
+  opacity: 0;
+  animation: intro-failsafe 0.4s 2.4s forwards;
+}
+@keyframes intro-failsafe {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,11 @@
+---
+import ToolView from '../views/ToolView.astro';
+import { listTranslated } from '../i18n/content';
+
+export async function getStaticPaths() {
+  const tools = await listTranslated('tools', 'en');
+  return tools.map((item) => ({ params: { tool: item.slug }, props: { item } }));
+}
+const { item } = Astro.props;
+---
+<ToolView lang="en" {item} />

@@ -1,0 +1,34 @@
+---
+// Home › current page, matching the BreadcrumbList in lib/schema.ts.
+import { localizePath, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n/ui';
+
+interface Props {
+  lang: Locale;
+  current: string;
+}
+const { lang, current } = Astro.props;
+const t = useTranslations(lang);
+---
+<nav class="crumbs eyebrow" aria-label={t.nav.breadcrumb}>
+  <a href={localizePath('/', lang)}>{t.hero.crumbHome}</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">{current}</span>
+</nav>
+
+<style>
+  .crumbs {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .crumbs a {
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--ink);
+  }
+  .crumbs [aria-current] {
+    color: var(--ink);
+  }
+</style>

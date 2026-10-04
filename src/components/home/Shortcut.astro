@@ -1,0 +1,240 @@
+---
+import { defaultLocale, fmt, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n/ui';
+
+interface Props {
+  lang?: Locale;
+}
+const { lang = defaultLocale } = Astro.props;
+const t = useTranslations(lang);
+const k = t.home.shortcut;
+const oses = [
+  { id: 'mac', label: 'Mac', shot: ['⌘', 'Ctrl', 'Shift', '4'], shotNote: k.shotNotes.mac, paste: ['⌘', 'V'], copy: ['⌘', 'Shift', 'C'] },
+  { id: 'win', label: 'Windows', shot: ['Win', 'Shift', 'S'], shotNote: k.shotNotes.win, paste: ['Ctrl', 'V'], copy: ['Ctrl', 'Shift', 'C'] },
+  { id: 'cros', label: 'Chromebook', shot: ['Ctrl', 'Shift', k.showWindows], shotNote: k.shotNotes.cros, paste: ['Ctrl', 'V'], copy: ['Ctrl', 'Shift', 'C'] },
+];
+---
+<section class="shortcut" aria-labelledby="shortcut-h" data-shortcut>
+  <div class="container grid">
+    <div class="copy">
+      <p class="eyebrow">{k.eyebrow}</p>
+      <h2 id="shortcut-h" class="h-section">{k.title}</h2>
+      <p class="lede">{k.lede}</p>
+      <div class="os" role="radiogroup" aria-label={k.computer}>
+        {oses.map((o, i) => (
+          <label><input type="radio" name="os" value={o.id} checked={i === 0} /> {o.label}</label>
+        ))}
+      </div>
+    </div>
+    {oses.map((o) => (
+      <ol class={`steps os-${o.id}`}>
+        <li>
+          <span class="n" aria-hidden="true">1</span>
+          <span class="keys">{o.shot.map((k) => <kbd>{k}</kbd>)}</span>
+          <span class="what">{fmt(k.step1, { note: o.shotNote })}</span>
+        </li>
+        <li>
+          <span class="n" aria-hidden="true">2</span>
+          <span class="keys">{o.paste.map((k) => <kbd>{k}</kbd>)}</span>
+          <span class="what">{k.step2}</span>
+        </li>
+        <li>
+          <span class="n" aria-hidden="true">3</span>
+          <span class="keys">{o.copy.map((k) => <kbd>{k}</kbd>)}</span>
+          <span class="what">{k.step3}</span>
+        </li>
+      </ol>
+    ))}
+  </div>
+</section>
+
+<script>
+  import { initShortcut } from '../../lib/motion/sections';
+
+  // Preselect the visitor's platform.
+  const p = navigator.platform || navigator.userAgent;
+  const id = /Mac/.test(p) ? 'mac' : /CrOS/.test(navigator.userAgent) ? 'cros' : /Win/.test(p) ? 'win' : null;
+  if (id) {
+    const input = document.querySelector<HTMLInputElement>(`.shortcut input[value="${id}"]`);
+    if (input) input.checked = true;
+  }
+
+  // Act out the steps on scroll-in, and again when the platform changes.
+  const section = document.querySelector<HTMLElement>('[data-shortcut]');
+  if (section) {
+    const motion = initShortcut(section);
+    section.querySelectorAll('input[name="os"]').forEach((el) => el.addEventListener('change', () => motion.play()));
+  }
+</script>
+
+<style>
+  .shortcut {
+    padding: 128px 0 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 64px;
+    align-items: center;
+  }
+  .copy {
+    display: grid;
+    gap: 14px;
+    justify-items: start;
+  }
+  .copy .lede {
+    max-width: 52ch;
+  }
+  /* Geist toggle */
+  .os {
+    display: inline-flex;
+    gap: 2px;
+    margin-top: 10px;
+    padding: 3px;
+    border-radius: 8px;
+    background: var(--well);
+  }
+  .os label {
+    position: relative;
+    padding: 6px 14px;
+    border-radius: var(--r-sm);
+    font-weight: 500;
+    font-size: var(--t-sm);
+    color: var(--ink-3);
+    cursor: pointer;
+    transition:
+      color 150ms var(--ease),
+      background-color 150ms var(--ease);
+  }
+  .os label:hover {
+    color: var(--ink);
+  }
+  .os input {
+    position: absolute;
+    opacity: 0;
+  }
+  .os label:has(input:checked) {
+    background: var(--sheet);
+    color: var(--ink);
+    box-shadow:
+      var(--shadow-1),
+      0 0 0 1px var(--rule);
+  }
+  .os label:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: none;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+  }
+  .grid:has(input[value='mac']:checked) .os-mac,
+  .grid:has(input[value='win']:checked) .os-win,
+  .grid:has(input[value='cros']:checked) .os-cros {
+    display: grid;
+  }
+  .steps li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    grid-template-rows: auto auto;
+    gap: 10px 16px;
+    padding: 22px 24px;
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    transition: background-color 250ms var(--ease);
+  }
+  .steps li + li {
+    border-top: 1px solid var(--rule);
+  }
+  .steps li::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform 250ms var(--ease-out);
+  }
+  .steps li.is-active {
+    background: color-mix(in srgb, var(--accent) 4%, var(--sheet));
+  }
+  .steps li.is-active::after {
+    transform: scaleY(1);
+  }
+  .n {
+    grid-row: 1 / 3;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    color: var(--ink-3);
+    transition:
+      color 250ms var(--ease),
+      border-color 250ms var(--ease),
+      background-color 250ms var(--ease);
+  }
+  .is-active .n {
+    color: var(--on-marker);
+    background: var(--marker);
+    border-color: var(--marker);
+  }
+  .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .keys kbd {
+    font-size: var(--t-sm);
+    min-width: 2.4em;
+    padding: 4px 10px;
+    line-height: 1.4;
+    border-radius: 8px;
+    box-shadow:
+      inset 0 -2px 0 var(--rule-strong),
+      var(--shadow-1);
+    transition:
+      transform 90ms var(--ease),
+      box-shadow 90ms var(--ease),
+      background-color 90ms var(--ease);
+  }
+  .keys kbd.is-down {
+    transform: translateY(1.5px);
+    background: var(--well);
+    box-shadow: inset 0 -0.5px 0 var(--rule-strong);
+  }
+  .what {
+    grid-column: 2;
+  }
+  @media (max-width: 860px) {
+    .shortcut {
+      padding-top: 96px;
+    }
+    .grid {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+  }
+  @media (max-width: 480px) {
+    .steps li {
+      padding: 18px 16px;
+      gap: 10px 12px;
+    }
+  }
+</style>

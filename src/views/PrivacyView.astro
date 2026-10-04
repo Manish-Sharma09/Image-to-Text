@@ -1,0 +1,227 @@
+---
+import Base from '../layouts/Base.astro';
+import Crumbs from '../components/site/Crumbs.astro';
+import LegalDoc from '../components/site/LegalDoc.astro';
+import { SITE } from '../config/site';
+import { serverConfig } from '../lib/server/config';
+import { pageSchema } from '../lib/schema';
+import { defaultLocale, fmt, languages, localizePath, type Locale } from '../i18n/config';
+import { useTranslations, siteLocales, localizeHtml } from '../i18n/ui';
+import { useLegal, hasLegal } from '../i18n/legal';
+
+interface Props {
+  lang: Locale;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const p = t.privacyPage;
+const enhanced = serverConfig.enhancedEnabled;
+const site = Astro.site ?? new URL(SITE.url);
+// The full policy shows in English until this locale has a translation of it.
+const docLang = hasLegal(lang) ? lang : defaultLocale;
+const doc = useLegal(docLang).privacy;
+const vars = { site: SITE.name, operator: SITE.operator, email: SITE.email, url: site.host };
+const description = fmt(t.meta.privacyDescription, { site: SITE.name });
+const updated = new Date(`${SITE.legalUpdated}T00:00:00Z`);
+const date = new Intl.DateTimeFormat(languages[lang].hreflang, { dateStyle: 'long', timeZone: 'UTC' });
+const schema = pageSchema({ type: 'WebPage', path: '/privacy', name: p.eyebrow, description, lang, site, homeName: t.hero.crumbHome, modified: SITE.legalUpdated });
+---
+<Base title={t.meta.privacyTitle} {description} {schema} {lang} alternates={siteLocales}>
+  <div class="container page">
+    <header>
+      <Crumbs {lang} current={p.eyebrow} />
+      <h1 class="h-display">{p.title}</h1>
+      <p class="lede">{enhanced ? p.ledeEnhanced : p.lede}</p>
+      <p class="eyebrow">{t.legalPage.updated} <time datetime={SITE.legalUpdated}>{date.format(updated)}</time></p>
+    </header>
+
+    <div class="cols">
+      <section class="col">
+        <h2>{p.deviceTitle} <span class="tag">{p.deviceTag}</span></h2>
+        <dl>
+          <dt>{p.whereTerm}</dt>
+          <dd>{p.whereText}</dd>
+          <dt>{p.uploadTerm}</dt>
+          <dd>{p.uploadText}</dd>
+          <dt>{p.downloadTerm}</dt>
+          <dd>{p.downloadText}</dd>
+          <dt>{p.keptTerm}</dt>
+          <dd>{p.keptText}</dd>
+          <dt>{p.trainingTerm}</dt>
+          <dd>{p.trainingText}</dd>
+        </dl>
+      </section>
+      {enhanced && (
+        <section class="col enh">
+          <h2>{p.enhTitle} <span class="tag">{p.enhTag}</span></h2>
+          <dl>
+            <dt>{p.enhWhenTerm}</dt>
+            <dd>{p.enhWhenText}</dd>
+            <dt>{p.uploadTerm}</dt>
+            <dd>{p.enhUploadText}</dd>
+            <dt>{p.enhWhoTerm}</dt>
+            <dd>{p.enhWhoText}</dd>
+            <dt>{p.keptTerm}</dt>
+            <dd set:html={localizeHtml(p.enhKeptHtml, lang)} />
+            <dt>{p.trainingTerm}</dt>
+            <dd>{p.enhTrainingText}</dd>
+          </dl>
+        </section>
+      )}
+    </div>
+
+    <section class="prose more">
+      <h2>{p.historyTitle}</h2>
+      <p>{p.historyText}</p>
+
+      <h2>{p.linksTitle}</h2>
+      <p set:html={localizeHtml(p.linksHtml, lang)} />
+
+      <h2>{p.fromLinkTitle}</h2>
+      <p>{p.fromLinkText}</p>
+
+      <h2>{p.checkTitle}</h2>
+      <p>{p.checkText}</p>
+
+      <h2>{p.analyticsTitle}</h2>
+      <p>{p.analyticsText}</p>
+    </section>
+
+    <section class="policy" aria-labelledby="policy-h">
+      <header class="policy-head" lang={docLang !== lang ? languages[docLang].hreflang : undefined}>
+        <h2 id="policy-h" class="h-section">{doc.title}</h2>
+        <p>{doc.intro}</p>
+        {docLang !== defaultLocale && <p class="note" set:html={fmt(t.legalPage.translationNoteHtml, { href: localizePath('/privacy', defaultLocale) })} />}
+      </header>
+      <LegalDoc sections={doc.sections} {lang} {docLang} {vars} level={3} />
+    </section>
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: 64px;
+  }
+  header {
+    display: grid;
+    gap: 16px;
+  }
+  h1 {
+    max-width: 20ch;
+  }
+  .lede {
+    max-width: 60ch;
+    font-size: var(--t-xl);
+    line-height: 1.55;
+  }
+  .cols {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+    gap: 16px;
+  }
+  .col {
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    padding: 28px;
+  }
+  .col h2 {
+    font-size: var(--t-xl);
+    letter-spacing: var(--track-sub);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 16px;
+    padding: 3px 10px;
+    border-radius: var(--r-pill);
+    background: var(--marker);
+    color: var(--on-marker);
+  }
+  .enh .tag {
+    background: var(--well);
+    color: var(--ink-2);
+    border: 1px solid var(--rule);
+  }
+  dl {
+    margin: 0;
+    display: grid;
+  }
+  dt {
+    font-weight: 500;
+    font-size: var(--t-sm);
+    color: var(--ink);
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid var(--rule);
+  }
+  dt:first-child {
+    margin-top: 8px;
+  }
+  dd {
+    margin: 4px 0 0;
+    max-width: 70ch;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+  dd a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  dd a:hover {
+    text-decoration: underline;
+  }
+  .more {
+    margin-top: 64px;
+  }
+  .policy {
+    margin-top: 96px;
+    padding-top: 64px;
+    border-top: 1px solid var(--rule);
+    display: grid;
+    gap: 48px;
+  }
+  .policy-head {
+    display: grid;
+    gap: 12px;
+  }
+  .policy-head p {
+    max-width: 66ch;
+    color: var(--ink-2);
+  }
+  .policy-head .note {
+    font-size: var(--t-sm);
+    color: var(--ink-3);
+  }
+  .note :global(a) {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .note :global(a:hover) {
+    text-decoration: underline;
+  }
+  @media (max-width: 640px) {
+    .page {
+      padding-top: 40px;
+    }
+    .cols {
+      margin-top: 32px;
+    }
+    .col {
+      padding: 20px;
+    }
+    .policy {
+      margin-top: 64px;
+      padding-top: 48px;
+      gap: 32px;
+    }
+  }
+</style>

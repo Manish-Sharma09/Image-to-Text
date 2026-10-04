@@ -1,0 +1,269 @@
+---
+// Body of the 404 and 500 pages: what happened, a way out, and the pages
+// people most often want. Rendered once per locale (see views/ErrorView.astro).
+import { SITE } from '../../config/site';
+import { localizePath, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n/ui';
+import { listLocalized } from '../../i18n/content';
+
+interface Props {
+  status: 404 | 500;
+  lang: Locale;
+}
+const { status, lang } = Astro.props;
+const t = useTranslations(lang);
+const x = t.errorPage;
+const e = status === 404 ? x.notFound : x.serverError;
+const [before, after = ''] = e.report.split('{link}');
+const digits = String(status).split('');
+const href = (path: string, l: Locale = lang) => localizePath(path, l);
+const popularIds = ['screenshot-to-text', 'pdf-to-text', 'photo-to-text', 'image-to-excel', 'image-to-word', 'handwriting-to-text'];
+const tools = await listLocalized('tools', lang);
+const popular = [
+  ...popularIds.flatMap((id) => {
+    const tool = tools.find((item) => item.slug === id);
+    return tool ? [{ label: tool.entry.data.navLabel, href: href(`/${tool.slug}`, tool.lang) }] : [];
+  }),
+  { label: x.guides, href: href('/guides') },
+  { label: x.contact, href: href('/contact') },
+];
+// The page's address is added to the body by the error page's script.
+const report = `mailto:${SITE.email}?subject=${encodeURIComponent(`${SITE.name}: ${e.reportSubject}`)}`;
+---
+<div class="error-page" data-error-page>
+  <div class="container hero">
+    <div class="text">
+      <p class="eyebrow">{e.eyebrow}</p>
+      <h1 class="h-display">{e.title}</h1>
+      <p class="lede">{e.lede}</p>
+      <div class="actions">
+        {status === 500 && <a class="btn btn-primary btn-lg btn-pill" href="">{x.serverError.retry}</a>}
+        <a class:list={['btn btn-lg btn-pill', status === 404 && 'btn-primary']} href={href('/')}>{x.home}</a>
+        {status === 404 && <a class="btn btn-lg btn-pill" href={href('/tools')}>{x.tools}</a>}
+      </div>
+      <p class="report">{before}<a href={report} data-report>{e.reportLink}</a>{after}</p>
+    </div>
+    <div class="scan" aria-hidden="true">
+      <div class="sheet">
+        <span class="badge">{e.badge}</span>
+        <span class="digits">
+          {digits.map((d, i) => <span class:list={['ch', i === digits.length - 1 && 'flag']}>{d}</span>)}
+        </span>
+        <span class="beam"></span>
+      </div>
+    </div>
+  </div>
+
+  <section class="container popular" aria-labelledby="popular-h">
+    <h2 id="popular-h">{x.popular}</h2>
+    <div class="frame">
+      <ul>
+        {popular.map((p) => (
+          <li>
+            <a href={p.href}>
+              {p.label}
+              <svg class="arr" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</div>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 64px;
+    padding-top: 80px;
+  }
+  .text {
+    display: grid;
+    gap: 16px;
+    justify-items: start;
+  }
+  h1 {
+    max-width: 16ch;
+  }
+  .lede {
+    max-width: 52ch;
+  }
+  .actions {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .report {
+    margin-top: 8px;
+    font-size: var(--t-sm);
+    color: var(--ink-3);
+  }
+  .report a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .report a:hover {
+    text-decoration: underline;
+  }
+
+  /* A page under the scanner: each digit boxed like a recognised character,
+     the last one flagged the way the tool marks words to check. */
+  .sheet {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-xl);
+    background-color: var(--sheet);
+    background-image: radial-gradient(circle at 1px 1px, var(--rule-strong) 1px, transparent 0);
+    background-size: 20px 20px;
+    box-shadow: var(--shadow-hero);
+  }
+  .digits {
+    display: flex;
+    gap: clamp(6px, 1.2vw, 12px);
+  }
+  .ch {
+    display: block;
+    padding: 0.04em 0.08em 0.1em;
+    font-size: clamp(4.5rem, 11vw, 8.5rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: var(--track-display);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    border-radius: var(--r-sm);
+    outline: 1.5px dashed color-mix(in srgb, var(--marker) 60%, transparent);
+    outline-offset: 2px;
+    background: color-mix(in srgb, var(--marker-soft) 70%, transparent);
+  }
+  .ch.flag {
+    outline-color: color-mix(in srgb, var(--query) 70%, transparent);
+    background: color-mix(in srgb, var(--warn-soft) 80%, transparent);
+    text-decoration: underline wavy var(--query);
+    text-decoration-thickness: 0.035em;
+    text-underline-offset: 0.08em;
+  }
+  .badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 4px 10px;
+    border-radius: var(--r-pill);
+    font-family: var(--mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    line-height: 16px;
+    text-transform: uppercase;
+    color: var(--query);
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--query) 30%, transparent);
+  }
+  .beam {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 12%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--marker) 20%, var(--marker) 80%, transparent);
+    box-shadow: 0 0 24px 2px color-mix(in srgb, var(--marker) 45%, transparent);
+    opacity: 0.7;
+    animation: scan 3.2s var(--ease) infinite alternate;
+  }
+  @keyframes scan {
+    to {
+      top: 86%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .beam {
+      display: none;
+    }
+  }
+
+  .popular {
+    margin-top: 96px;
+  }
+  .popular h2 {
+    font-size: var(--t-xl);
+    letter-spacing: var(--track-sub);
+    margin-bottom: 16px;
+  }
+  /* Shared-hairline grid: the list overhangs the frame by 1px on the right
+     and bottom so the outer cells' borders are clipped by the frame. */
+  .frame {
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    background: var(--sheet);
+    overflow: hidden;
+  }
+  .popular ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 -1px -1px 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .popular li {
+    display: flex;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .popular a {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px;
+    font-weight: 500;
+    font-size: var(--t-sm);
+    color: var(--ink);
+    text-decoration: none;
+    transition: background-color 150ms var(--ease);
+  }
+  .popular a:hover {
+    background: var(--paper);
+  }
+  .popular a:focus-visible {
+    outline-offset: -2px;
+  }
+  .arr {
+    flex: none;
+    color: var(--ink-4);
+    transition:
+      transform 200ms var(--ease-out),
+      color 150ms var(--ease);
+  }
+  .popular a:hover .arr {
+    color: var(--ink);
+    transform: translateX(2px);
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 40px;
+      padding-top: 48px;
+    }
+    .scan {
+      max-width: 520px;
+    }
+    .popular ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 520px) {
+    .popular {
+      margin-top: 64px;
+    }
+    .popular ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
